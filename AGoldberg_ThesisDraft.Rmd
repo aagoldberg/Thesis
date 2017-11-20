@@ -1,0 +1,60 @@
+---
+title: "ThesisFinal"
+author: "Andrew Goldberg"
+date: "11/20/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import historic, echo=FALSE, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(foreign)
+library(memisc)
+
+datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
+
+histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeName.csv")
+
+
+histVars <- histCodeName$varCode
+str(histVars)
+datHist[histVars]
+dfHist <- subset(datHist, select = histVars)
+colnames(dfHist)
+colnames(dfHist) <- histCodeName$VarName
+names(datHist)
+datHist[histCodeName$varCode,]
+codebook(dfHist)
+colnames(dfHist)
+dfHist <- subset(datHist, select = as.vector(histCodeName$varCode))
+str(histCodeName$varCode)
+HistVarComb <- c(HistVar, HistVarA)
+HistColComb <- c(HistCol, HistColA)
+HistColVar <- as.data.frame(cbind(HistVarComb, HistColComb))
+HistInfoComb <- datHist[HistVarComb]
+names(HistInfoComb) <- HistColComb
+
+HistInfoCombdf <- data.frame(Reduce(cbind, HistInfoComb))
+colnames(HistInfoCombdf) <- HistColComb
+#summary(HistInfoCombdf)
+
+#Remove "other", "na", "dk", and missing codes
+varType <- read.csv("/Users/andrew/Documents/School/Capstone/Workbook3a.csv") #("Workbook2.csv" I manually labeled the variable types in excel) #hand coded the variable parameters
+
+vctseqmod <- paste0('c(', gsub('\"', '', varType$Valid), ')') #Got some help on this
+fctParse <- function(x){eval(parse(text = paste0(x)))}
+lstseq <- lapply(vctseqmod, fctParse)
+
+Histdf.cln <- HistInfoCombdf
+for(i in 3:ncol(Histdf.cln)){
+   Histdf.cln[,i][!(Histdf.cln[,i] %in% unlist(lstseq[i]))] <- NA
+}
+```
+
+
+
+https://cran.r-project.org/web/packages/memisc/vignettes/anes48.html
