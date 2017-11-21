@@ -17,42 +17,37 @@ library(memisc)
 
 datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
 
+#Upload chosen variable list and select
 histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeName.csv")
-
-
-histVars <- histCodeName$varCode
-str(histVars)
-datHist[histVars]
+histVars <- as.character(histCodeName$varCode)
 dfHist <- subset(datHist, select = histVars)
-colnames(dfHist)
-colnames(dfHist) <- histCodeName$VarName
-names(datHist)
-datHist[histCodeName$varCode,]
-codebook(dfHist)
-colnames(dfHist)
-dfHist <- subset(datHist, select = as.vector(histCodeName$varCode))
-str(histCodeName$varCode)
-HistVarComb <- c(HistVar, HistVarA)
-HistColComb <- c(HistCol, HistColA)
-HistColVar <- as.data.frame(cbind(HistVarComb, HistColComb))
-HistInfoComb <- datHist[HistVarComb]
-names(HistInfoComb) <- HistColComb
-
-HistInfoCombdf <- data.frame(Reduce(cbind, HistInfoComb))
-colnames(HistInfoCombdf) <- HistColComb
-#summary(HistInfoCombdf)
+colnames(dfHist) <- as.character(histCodeName$VarName)
 
 #Remove "other", "na", "dk", and missing codes
 varType <- read.csv("/Users/andrew/Documents/School/Capstone/Workbook3a.csv") #("Workbook2.csv" I manually labeled the variable types in excel) #hand coded the variable parameters
 
-vctseqmod <- paste0('c(', gsub('\"', '', varType$Valid), ')') #Got some help on this
+histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
+
+vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
 
-Histdf.cln <- HistInfoCombdf
-for(i in 3:ncol(Histdf.cln)){
-   Histdf.cln[,i][!(Histdf.cln[,i] %in% unlist(lstseq[i]))] <- NA
+dfHistCln <- dfHist
+for(i in 3:ncol(dfHistCln)){
+   dfHistCln[,i][!(dfHistCln[,i] %in% unlist(lstseq[i]))] <- NA
 }
+
+codebook((dfHistCln))
+
+
+
+
+#Split Presidential years from congressional/governor
+PresYears <- c(2016, 2012, 2008, 2004, 2000,	1996,	1992,	1988,	1984,	1980,	1976,	1972,	1968,	1964,	1960,	1956,	1952) #Dropped 1948 due to lack of pairwise data
+CongGovYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	1966,	1962,	1958,	1954,	1950)
+
+dfHistPres <- dfHist[dfHist$Year %in% PresYears,]
+dfHistConGov <- dfHist[dfHist$Year %in% CongGovYears,]
 ```
 
 
