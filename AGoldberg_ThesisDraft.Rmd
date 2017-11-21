@@ -16,30 +16,23 @@ library(foreign)
 library(memisc)
 
 datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
-#Upload chosen variable list and select
-histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeName.csv")
-histVars <- as.character(histCodeName$varCode)
-dfHist <- subset(datHist, select = histVars)
-colnames(dfHist) <- as.character(histCodeName$VarName)
+SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav")
 
-#Remove "other", "na", "dk", and missing codes
-varType <- read.csv("/Users/andrew/Documents/School/Capstone/Workbook3a.csv") #("Workbook2.csv" I manually labeled the variable types in excel) #hand coded the variable parameters
-
-histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
+#Upload chosen variable list and select -- data.set
+histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
+histVars <- trimws(as.character(histCodeName$varCodeHist))
 
 vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
-vctseqmod
-dfHistCln <- dfHist
-for(i in 3:ncol(dfHistCln)){
-   dfHistCln[,i][!(dfHistCln[,i] %in% unlist(lstseq[i]))] <- NA
+
+SFHist <- datHist[histVars]  
+for(i in 3:length(histVars)){
+  VarUnique <- unique(((SFHist[[histVars[i]]])))
+  SetToMissing <- VarUnique[!(VarUnique %in% lstseq[[i]])]
+  SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
 }
-
-codebook((dfHistCln))
-table((dfHist$Cohort))
-summary(dfHist)
-
+codebook(SFHist)
 
 
 #Split Presidential years from congressional/governor
@@ -50,6 +43,37 @@ dfHistPres <- dfHist[dfHist$Year %in% PresYears,]
 dfHistConGov <- dfHist[dfHist$Year %in% CongGovYears,]
 ```
 
+```{r import 2016}
+library(foreign)
+library(memisc)
+
+dat16 <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_2016_sav(2)/anes_timeseries_2016.sav"))
+histVars16 <- trimws(as.character(histCodeName$varCode16))
+dfHist16 <- subset(datHist, select = histVars16)
+
+
+
+codebook(dfHist16$vcf0004)
+head(dat16)
+head(histCodeNameValid)
+class(dfHist16$vcf0004)
+class(dfHist16[["vcf0004"]])
+Pre16info <- dat[PreVar]
+names(Pre16info) <- PreCol
+Pre16df <- data.frame(Reduce(cbind, Pre16info))
+colnames(Pre16df) <- PreCol
+#str(Pre16info)
+#summary(Pre16info$SummaryPrePres)
+#summary(Pre16info$VotePresPref)
+
+Post16info <- dat[PostVar]
+names(Post16info) <- PostCol
+Post16df <- data.frame(Reduce(cbind, Post16info))
+colnames(Post16df) <- PostCol
+
+head(dat16)
+SFHist[1]
+```
 
 
 https://cran.r-project.org/web/packages/memisc/vignettes/anes48.html

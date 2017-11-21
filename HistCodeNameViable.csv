@@ -100,7 +100,7 @@ vcf0714,PresElectionClose,ordinal,"""1:2""",vcf0714,v161147 ,,
 vcf0715,LocalTicketSplit,ordinal,"""1:5""",vcf0715,,,
 vcf0716,LocalTicketSplit2,ordinal,"""1:2""",vcf0716,,,
 vcf0717,InfluenceOthers,binary,"""1:2""",vcf0717,,,
-vcf0723,NumParticActs6,ordinal,"""1:6""",vcf0723,MEDIAPO_WSITE,post,
+vcf0723,NumParticActs6,ordinal,"""1:6""",vcf0723,,post,MEDIAPO_WSITE
 vcf0728,NumMediaTypes,ordinal,"""1:5""",vcf0728,,,
 vcf0729,HouseMajorityParty,binary,"""1,2""",vcf0729,,,
 vcf0733,NumDiscussPolitics,ordinal,"""0:7""",vcf0733,,,
