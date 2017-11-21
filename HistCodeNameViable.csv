@@ -1,114 +1,128 @@
-varCode,VarName,VarType,Valid
-vcf0004,Year,interval,
-vcf0006a,UniqueCase,nominal,
-vcf0019,HeadOfHouse,nominal,"""1:3"""
-vcf0050a,ObsInfoLvlPre,ordinal,"""1:5"""
-vcf0050b,ObsInfoLvlPost,ordinal,"""1:5"""
-vcf0101,Age,interval,"""17:19"""
-vcf0102,AgeGroup,ordinal,"""1:7"""
-vcf0103,Cohort,ordinal,"""1:8"""
-vcf0104,Gender,binary,"""1,2"""
-vcf0110,Education,ordinal,"""1:4"""
-vcf0111,Urbanism,ordinal,"""1:3"""
-vcf0112,CensusRegion,nominal,"""1:4"""
-vcf0113,SouthNonSouth,nominal,"""1:2"""
-vcf0114,IncomeGroup,ordinal,"""1:5"""
-vcf0115,Occupation,nominal,"""1:6"""
-vcf0116,WorkStatus,nominal,"""1:2, 4:8"""
-vcf0126,FatherOccup,categorical,"""1:5"""
-vcf0127,UnionMember,binary,"""1:2"""
-vcf0128,Religion,nominal,"""1:4"""
-vcf0130,ChurchAttendance70,ordinal,"""1:5"""
-vcf0131,ChurchAttendance5268,ordinal,"""1:2, 4:5"""
-vcf0135,GrewUpLargeCity,binary,"""1:2"""
-vcf0138,NumChildren,ordinal,"""0:3"""
-vcf0140,Education6,ordinal,"""1:6"""
-vcf0143,NativeParents,nominal,"""1,5"""
-vcf0146,FamilyHomeOwner,binary,"""1,2"""
-vcf0147,MaritalStatus,nominal,"""1:5, 7"""
-vcf0148,SocialClass,ordinal,"""0:7"""
-vcf0155,JobWorry,ordinal,"""1,3,5"""
-vcf0201,DemTherm,interval,"""0:97"""
-vcf0202,RepTherm,interval,"""0:97"""
-vcf0202,PeopleWelfareTherm,interval,"""0:97"""
-vcf0211,LiberalsTherm,interval,"""0:97"""
-vcf0212,ConservativesTherm,interval,"""0:97"""
-vcf0221,PolIndesTherm,interval,"""0:97"""
-vcf0222,PoliticalPartiesTherm,interval,"""0:97"""
-vcf0231,FedGovTherm,interval,"""0:97"""
-vcf0291,MajorPartyTherm,interval,"""0:99"""
-vcf0301,Partisan7,ordinal,"""1:7"""
-vcf0303,Partisan3,ordinal,"""1:3"""
-vcf0305,PartyIdent7,ordinal,"""1:4"""
-vcf0305,PartisanLean,ordinal,"""1:4"""
-vcf0310,PoliticalInterest,ordinal,"""1:3"""
-vcf0311,CarePartyPres,binary,"""1,2"""
-vcf0312,CarePartyCong,nominal,"""1,2"""
-vcf0313,InterestPublicAffaris,ordinal,"""1:4"""
-vcf0342,PresidentKnowledgable,ordinal,"""1:4"""
-vcf0343,PresidentMoral,ordinal,"""1:4"""
-vcf0344,PresidentStrongLeader,ordinal,"""1:4"""
-vcf0345,PresidentCares,ordinal,"""1:4"""
-vcf0346,PresidentAffectAngry,binary,"""1:2"""
-vcf0347,PresidentAffectAfraid,binary,"""1:2"""
-vcf0348,PresidentAffectHopeful,binary,"""1:2"""
-vcf0349,PresidentAffectProud,binary,"""1:2"""
-vcf0428,USPresTherm,interval,"""0:97"""
-vcf0450,PresPerfApprove,binary,"""1,2"""
-vcf0501,DiffTweenParties,binary,"""1,2"""
-vcf0521,StrongerGovtParty,ordinal,"""1:3"""
-vcf0522,AvoidWarParty,ordinal,"""1:3"""
-vcf0604,TrustFedGov,ordinal,"""1:4"""
-vcf0605,FedGovInterests,binary,"""1,2"""
-vcf0606,FedGovWasteTaxes,ordinal,"""1:3"""
-vcf0608,GovtCrookedOffic,ordinal,"""1:3"""
-vcf0609,GovtCareYouThink,ordinal,"""1:2"""
-vcf0613,HaveSayInGovt,ordinal,"""1:2"""
-vcf0614,PolGovComplicated,ordinal,"""1:2"""
-vcf0615,VoteMatters,ordinal,"""1:2"""
-vcf0616,VoteIfNotCare,ordinal,"""1:2"""
-vcf0617,VoteIfPartyCantWin,ordinal,"""1:2"""
-vcf0618,LocalElectionsMatter,ordinal,"""1:2"""
-vcf0619,TrustPeople,ordinal,"""1,2"""
-vcf0620,PeopleHelpful,ordinal,"""1,2"""
-vcf0621,PeopleFair,nominal,"""1,2"""
-vcf0622,GovtListensYou,ordinal,"""1:3"""
-vcf0623,UsConcernWorld,binary,"""1:3"""
-vcf0624,ElectionGovListenYou,ordinal,"""1:3"""
-vcf0700,PartyElectedPresNov,binary,"""1:2"""
-vcf0702,VoteNationalElections,binary,"""1:2"""
-vcf0704,PresVoteParty,ordinal,"""1:3"""
-vcf0710,NationalTicketSplit,ordinal,"""1:4"""
-vcf0711,AlwaysVoteSameParty,ordinal,"""1:2"""
-vcf0712,DecisionTime,ordinal,"""1:6"""
-vcf0713,PrePresIntent,ordinal,"""1:3"""
-vcf0714,PresElectionClose,ordinal,"""1:2"""
-vcf0715,LocalTicketSplit,ordinal,"""1:5"""
-vcf0716,LocalTicketSplit2,ordinal,"""1:2"""
-vcf0717,InfluenceOthers,binary,"""1:2"""
-vcf0723,NumParticActs6,ordinal,"""1:6"""
-vcf0728,NumMediaTypes,ordinal,"""1:5"""
-vcf0729,HouseMajorityParty,binary,"""1,2"""
-vcf0733,NumDiscussPolitics,ordinal,"""0:7"""
-vcf0734,PresIntendActual,nominal,"""1:9"""
-vcf0737,Registered,binary,"""1,2"""
-vcf0803,LibConScale,ordinal,"""1:7"""
-vcf0809,GuarJobsIncome,ordinal,"""1:7"""
-vcf0814,CivilRightsSpeed,ordinal,"""1:3"""
-vcf0823,BetterOffUSIsolated,ordinal,"""1:2"""
-vcf0830,AidToBlacksScale,ordinal,"""1:7"""
-vcf0834,WomenEqualRole,ordinal,"""1:7"""
-vcf0838,WhenAbortionAllow,ordinal,"""1:4"""
-vcf0839,GovServicesSpending,ordinal,"""1:7"""
-vcf0843,DefenseSpending,ordinal,"""1:7"""
-vcf0846,ReligionImportant,binary,"""1,2"""
-vcf0847,ReligiousGuidance,ordinal,"""1:3"""
-vcf0851,LifestyleSocietyBreak,ordinal,"""1:5"""
-vcf0853,EmphasisTradMoreValues,ordinal,"""1:5"""
-vcf0870,EconomyBetterWorse,ordinal,"""1,3,5"""
-vcf0876,LawGays,binary,"""1,5"""
-vcf0880,BetterOrWorseOff,,"""1:3"""
-vcf0890,FedSpendSchool,ordinal,"""1:3"""
-vcf9001,LengthCommunity,interval,"""0:90"""
-vcf9014,EqualRights,ordinal,"""1:5"""
-vcf9022,PresPrefStrength,binary,"""1,5"""
+varCodeHist,VarName,VarType,Valid,varCode16,A2016,b2016,c2016
+vcf0004,Year,interval,,VCF0004,,,
+vcf0006a,UniqueCase,nominal,,VCF0006a,V160001 ,,
+vcf0019,HeadOfHouse,nominal,"""1:3""",VCF0019,,,
+vcf0050a,ObsInfoLvlPre,ordinal,"""1:5""",VCF0050a,,,
+vcf0050b,ObsInfoLvlPost,ordinal,"""1:5""",VCF0050b,,,
+vcf0101,Age,interval,"""17:19""",VCF0101,V161267 ,,
+vcf0102,AgeGroup,ordinal,"""1:7""",VCF0102,,,
+vcf0103,Cohort,ordinal,"""1:8""",VCF0103,,,
+vcf0104,Gender,binary,"""1,2""",VCF0104,V161342 ,,
+vcf0110,Education,ordinal,"""1:4""",VCF0110,V161270 ,,
+vcf0111,Urbanism,ordinal,"""1:3""",VCF0111,,,
+vcf0112,CensusRegion,nominal,"""1:4""",VCF0112,,,
+vcf0113,SouthNonSouth,nominal,"""1:2""",VCF0113,,,
+vcf0114,IncomeGroup,ordinal,"""1:5""",VCF0114,V161351 ,,
+vcf0115,Occupation,nominal,"""1:6""",VCF0115,V161275x ,,
+vcf0116,WorkStatus,nominal,"""1:2, 4:8""",VCF0116,V161288 ,,
+vcf0126,FatherOccup,categorical,"""1:5""",VCF0126,,,
+vcf0127,UnionMember,binary,"""1:2""",VCF0127,V161302 ,V161303 ,
+vcf0128,Religion,nominal,"""1:4""",VCF0128,V161265x ,,
+vcf0130,ChurchAttendance70,ordinal,"""1:5""",VCF0130,V161245 ,,
+vcf0131,ChurchAttendance5268,ordinal,"""1:2, 4:5""",VCF0131,,,
+vcf0135,GrewUpLargeCity,binary,"""1:2""",VCF0135,,,
+vcf0138,NumChildren,ordinal,"""0:3""",VCF0138,,,
+vcf0140,Education6,ordinal,"""1:6""",VCF0140,V161270 ,,
+vcf0143,NativeParents,nominal,"""1,5""",VCF0143,V161315 ,,
+vcf0146,FamilyHomeOwner,binary,"""1,2""",VCF0146,V161334 ,,
+vcf0147,MaritalStatus,nominal,"""1:5, 7""",VCF0147,V161268 ,,
+vcf0148,SocialClass,ordinal,"""0:7""",VCF0148,V161308x ,,
+vcf0155,JobWorry,ordinal,"""1,3,5""",VCF0155,V161297 ,,
+vcf0201,DemTherm,interval,"""0:97""",VCF0201,V161095 ,,
+vcf0202,RepTherm,interval,"""0:97""",VCF0202,V161096 ,,
+vcf0202,PeopleWelfareTherm,interval,"""0:97""",VCF0202,,,
+vcf0211,LiberalsTherm,interval,"""0:97""",VCF0211,V162097 ,,
+vcf0212,ConservativesTherm,interval,"""0:97""",VCF0212,V162101 ,,
+vcf0221,PolIndesTherm,interval,"""0:97""",VCF0221,,,
+vcf0222,PoliticalPartiesTherm,interval,"""0:97""",VCF0222,,,
+vcf0231,FedGovTherm,interval,"""0:97""",VCF0231,,,
+vcf0291,MajorPartyTherm,interval,"""0:99""",VCF0291,,,
+vcf0301,Partisan7,ordinal,"""1:7""",VCF0301,V161126 ,,
+vcf0303,Partisan3,ordinal,"""1:3""",VCF0303,,,
+vcf0305,PartyIdent7,ordinal,"""1:4""",VCF0305,V161155 ,,
+vcf0305,PartisanLean,ordinal,"""1:4""",VCF0305,V161156 ,V161157 ,
+vcf0310,PoliticalInterest,ordinal,"""1:3""",VCF0310,V162256 ,V161004 ,
+vcf0311,CarePartyPres,binary,"""1,2""",VCF0311,V161145 ,,
+vcf0312,CarePartyCong,nominal,"""1,2""",VCF0312,,,
+vcf0313,InterestPublicAffaris,ordinal,"""1:4""",VCF0313,V161004 ,,
+vcf0342,PresidentKnowledgable,ordinal,"""1:4""",VCF0342,,,
+vcf0343,PresidentMoral,ordinal,"""1:4""",VCF0343,,,
+vcf0344,PresidentStrongLeader,ordinal,"""1:4""",VCF0344,,,
+vcf0345,PresidentCares,ordinal,"""1:4""",VCF0345,,,
+vcf0346,PresidentAffectAngry,binary,"""1:2""",VCF0346,,,
+vcf0347,PresidentAffectAfraid,binary,"""1:2""",VCF0347,,,
+vcf0348,PresidentAffectHopeful,binary,"""1:2""",VCF0348,,,
+vcf0349,PresidentAffectProud,binary,"""1:2""",VCF0349,,,
+VCF0358 ,DemCandAngry,binary,"""1:2""",V161116 ,,,
+VCF0359 ,DemCandAfraid,binary,"""1:2""",V161118,,,
+VCF0360 ,DemCandHopeful,binary,"""1:2""",V161117,,,
+VCF0361 ,DemCandProud,binary,"""1:2""",V161119,,,
+VCF0354 ,DemCandKnowledge,ordinal,"""1:4""",V161161 ,,,
+VCF0356 ,DemCandLeader,ordinal,"""1:4""",V161164 ,,,
+VCF0357 ,DemCandCares,ordinal,"""1:4""",V161165 ,,,
+VCF0366,RepCandKnowledge,ordinal,"""1:4""",V161166 ,,,
+VCF0368 ,RepCandLeader,ordinal,"""1:4""",V161164 ,,,
+VCF0369 ,RepCandCares,ordinal,"""1:4""",V161165 ,,,
+VCF0370 ,RepCandAngry,binary,"""1:2""",V161121,,,
+VCF0371 ,RepCandAfraid,binary,"""1:2""",V161123,,,
+VCF0372 ,RepCandHopeful,binary,"""1:2""",V161122,,,
+VCF0373 ,RepCandProud,binary,"""1:2""",V161124,,,
+vcf0428,USPresTherm,interval,"""0:97""",VCF0428,V161092 ,,
+vcf0450,PresPerfApprove,binary,"""1,2""",VCF0450,V161082,V161082 ,
+vcf0501,DiffTweenParties,binary,"""1,2""",VCF0501,V162190 ,V162281 ,V162282 
+vcf0521,StrongerGovtParty,ordinal,"""1:3""",VCF0521,,,
+vcf0522,AvoidWarParty,ordinal,"""1:3""",VCF0522,,,
+vcf0604,TrustFedGov,ordinal,"""1:4""",VCF0604,,,
+vcf0605,FedGovInterests,binary,"""1,2""",VCF0605,V161216 ,,
+vcf0606,FedGovWasteTaxes,ordinal,"""1:3""",VCF0606,V161217 ,,
+vcf0608,GovtCrookedOffic,ordinal,"""1:3""",VCF0608,V162275 ,,
+vcf0609,GovtCareYouThink,ordinal,"""1:2""",VCF0609,V162215 ,,
+vcf0613,HaveSayInGovt,ordinal,"""1:2""",VCF0613,V162216 ,,
+vcf0614,PolGovComplicated,ordinal,"""1:2""",VCF0614,V162217 ,,
+vcf0615,VoteMatters,ordinal,"""1:2""",VCF0615,V162282 ,,
+vcf0616,VoteIfNotCare,ordinal,"""1:2""",VCF0616,,,
+vcf0617,VoteIfPartyCantWin,ordinal,"""1:2""",VCF0617,,,
+vcf0618,LocalElectionsMatter,ordinal,"""1:2""",VCF0618,,,
+vcf0619,TrustPeople,ordinal,"""1,2""",VCF0619,V161219 ,,
+vcf0620,PeopleHelpful,ordinal,"""1,2""",VCF0620,,,
+vcf0621,PeopleFair,nominal,"""1,2""",VCF0621,,,
+vcf0622,GovtListensYou,ordinal,"""1:3""",VCF0622,,,
+vcf0623,UsConcernWorld,binary,"""1:3""",VCF0623,,,
+vcf0624,ElectionGovListenYou,ordinal,"""1:3""",VCF0624,,,
+vcf0700,PartyElectedPresNov,binary,"""1:2""",VCF0700,,V161146 ,
+vcf0702,VoteNationalElections,binary,"""1:2""",VCF0702,,,
+vcf0704,PresVoteParty,ordinal,"""1:3""",VCF0704,,V161027 ,V162034 
+vcf0710,NationalTicketSplit,ordinal,"""1:4""",VCF0710,,,
+vcf0711,AlwaysVoteSameParty,ordinal,"""1:2""",VCF0711,,,V161136 
+vcf0712,DecisionTime,ordinal,"""1:6""",VCF0712,V161029a ,V161029b ,
+vcf0713,PrePresIntent,ordinal,"""1:3""",VCF0713,V161031 ,,
+vcf0714,PresElectionClose,ordinal,"""1:2""",VCF0714,V161147 ,,
+vcf0715,LocalTicketSplit,ordinal,"""1:5""",VCF0715,,,
+vcf0716,LocalTicketSplit2,ordinal,"""1:2""",VCF0716,,,
+vcf0717,InfluenceOthers,binary,"""1:2""",VCF0717,,,
+vcf0723,NumParticActs6,ordinal,"""1:6""",VCF0723,MEDIAPO_WSITE,post,
+vcf0728,NumMediaTypes,ordinal,"""1:5""",VCF0728,,,
+vcf0729,HouseMajorityParty,binary,"""1,2""",VCF0729,,,
+vcf0733,NumDiscussPolitics,ordinal,"""0:7""",VCF0733,,,
+vcf0734,PresIntendActual,nominal,"""1:9""",VCF0734,V161030 ,V161027 ,
+vcf0737,Registered,binary,"""1,2""",VCF0737,V161011 ,,
+vcf0803,LibConScale,ordinal,"""1:7""",VCF0803,V161126 ,,
+vcf0809,GuarJobsIncome,ordinal,"""1:7""",VCF0809,,,
+vcf0814,CivilRightsSpeed,ordinal,"""1:3""",VCF0814,,,
+vcf0823,BetterOffUSIsolated,ordinal,"""1:2""",VCF0823,V161153 ,V161154 ,
+vcf0830,AidToBlacksScale,ordinal,"""1:7""",VCF0830,V161198 ,,
+vcf0834,WomenEqualRole,ordinal,"""1:7""",VCF0834,,V162149 ,
+vcf0838,WhenAbortionAllow,ordinal,"""1:4""",VCF0838,V161232 ,,
+vcf0839,GovServicesSpending,ordinal,"""1:7""",VCF0839,,V161178 ,
+vcf0843,DefenseSpending,ordinal,"""1:7""",VCF0843,,V161181 ,
+vcf0846,ReligionImportant,binary,"""1,2""",VCF0846,V161241 ,,
+vcf0847,ReligiousGuidance,ordinal,"""1:3""",VCF0847,V161242 ,,
+vcf0851,LifestyleSocietyBreak,ordinal,"""1:5""",VCF0851,V162208 ,,
+vcf0853,EmphasisTradMoreValues,ordinal,"""1:5""",VCF0853,V162209 ,V162210 ,
+vcf0870,EconomyBetterWorse,ordinal,"""1,3,5""",VCF0870,V161140 ,,
+vcf0876,LawGays,binary,"""1,5""",VCF0876,V161229 ,,
+vcf0880,BetterOrWorseOff,,"""1:3""",VCF0880,V161110 ,,
+vcf0890,FedSpendSchool,ordinal,"""1:3""",VCF0890,V161206 ,,
+vcf9001,LengthCommunity,interval,"""0:90""",VCF9001,V161331x ,,
+vcf9014,EqualRights,ordinal,"""1:5""",VCF9014,,V162244 ,
+vcf9022,PresPrefStrength,binary,"""1,5""",VCF9022,V162066x ,,

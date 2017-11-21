@@ -16,7 +16,6 @@ library(foreign)
 library(memisc)
 
 datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
-
 #Upload chosen variable list and select
 histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeName.csv")
 histVars <- as.character(histCodeName$varCode)
@@ -31,14 +30,15 @@ histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thes
 vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
-
+vctseqmod
 dfHistCln <- dfHist
 for(i in 3:ncol(dfHistCln)){
    dfHistCln[,i][!(dfHistCln[,i] %in% unlist(lstseq[i]))] <- NA
 }
 
 codebook((dfHistCln))
-
+table((dfHist$Cohort))
+summary(dfHist)
 
 
 
