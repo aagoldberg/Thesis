@@ -23,12 +23,10 @@ histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thes
 histVars <- trimws(as.character(histCodeNameValid$varCodeHist))
 histVars <- histVars[histVars != ""]
 
-
-vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
+#Limit to viable variables
+vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')')
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
-
-
 
 SFHist <- datHist[histVars]  
 for(i in 3:length(histVars)){
