@@ -28,13 +28,14 @@ vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')')
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
 
+histVars[10] %in% colnames(datHist)
 SFHist <- datHist[histVars]  
 for(i in 3:length(histVars)){
   VarUnique <- unique(((SFHist[[histVars[i]]])))
   SetToMissing <- VarUnique[!(VarUnique %in% lstseq[[i]])]
   SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
 }
-
+codebook(datHist$vcf0105b)
 histVarNames <- trimws(as.character(histCodeNameValid$VarName))
 histVarNames <- histVarNames[histVarNames != ""]
 colnames(SFHist) <- histVarNames
