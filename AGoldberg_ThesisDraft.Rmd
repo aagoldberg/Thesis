@@ -64,7 +64,10 @@ histVarNames16 <- histCodeNameValid$VarName[(trimws(histCodeNameValid$A2016) %in
 colnames(dfHist16) <- histVarNames16
 
 #create NumPoliticalActs variable to match historic data
+#written letter/ donate money / display button,sticker / work for party or candidate / attend meetingsmrallies / influence others
 
+dat16$NumParticActs6 <- rowSums(as.data.frame(dat16[c("v162010", "v162011", "v162012", "v162013", "v162014")]) == "2. No") + 1
+as.numeric(dat16$v162011)
 codebook(dat16$v162011)
 dfHist16Re <- within(dfHist16,{
      missing.values(Gender) <- c(-9, -8, 3)
