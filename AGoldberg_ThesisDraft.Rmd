@@ -65,10 +65,9 @@ colnames(dfHist16) <- histVarNames16
 
 #create NumPoliticalActs variable to match historic data
 #written letter/ donate money / display button,sticker / work for party or candidate / attend meetingsmrallies / influence others
-
 dat16$NumParticActs6 <- rowSums(as.data.frame(dat16[c("v162010", "v162011", "v162012", "v162013", "v162014")]) == "2. No") + 1
-as.numeric(dat16$v162011)
-codebook(dat16$v162011)
+dfHist16$NumParticActs6 <- dat16$NumParticActs6
+
 dfHist16Re <- within(dfHist16,{
      missing.values(Gender) <- c(-9, -8, 3)
      missing.values(Age) <- c(-9, -8)
@@ -297,7 +296,7 @@ dfHist16Re <- within(dfHist16,{
             '1. Strong' = 1 <- c(11,21,31,41,51),
             '5. Not strong' = 5 <- c(10,20,30,40,50))
      missing.values(PresPrefStrength) <- c(1)
-     
+     recode()
      PresIntendActual <- cases(
        PrePresIntent == 1  & PresPrefStrength == 10:11 -> "1. INTENDED Democratic: voted Democratic",
        PrePresIntent == c(-8,6) & PresPrefStrength == 10:11 -> "2. INTENDED undecided: voted Democratic",
@@ -309,8 +308,8 @@ dfHist16Re <- within(dfHist16,{
        PrePresIntent == c(-8,6) & PresPrefStrength == 20:21 -> "8. INTENDED undecided: voted Republican",
        PrePresIntent == 2 & PresPrefStrength == 20:21 -> "9. INTENDED Republican: voted Republican")
      })
-codebook(dfHist16$InterestPublicAffairs)
-codebook(SFHist$InterestPublicAffairs)
+codebook(dfHist16$NumParticActs6)
+codebook(SFHist$NumParticActs6)
 
 #vertically combine the historic and 2016 data sets
 SFHistMerge <- SFHist[colnames(dfHist16)]
@@ -319,9 +318,9 @@ dfComb <- rbind(SFHistMerge,dfHist16Re)
 codebook(dfComb$Partisan7)
 codebook(dfHist16$PrePresIntent)
 
-codebook(SFHist$VoteMatters)
-codebook(dat16$v162282)
-codebook(dat16$v162058x)
+codebook(SFHist$NumMediaTypes)
+codebook(dat16$v161009)
+codebook(dat16$v162244)
 codebook(dat16$v162062x)
 codebook(dat16$v162066x)
 codebook(dat16$v161030)
