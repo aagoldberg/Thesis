@@ -19,8 +19,8 @@ datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone
 SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav")
 
 #Upload chosen variable list and select -- data.set
-histCodeName <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
-histVars <- trimws(as.character(histCodeName$varCodeHist))
+histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
+histVars <- trimws(as.character(histCodeNameValid$varCodeHist))
 
 vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
 fctParse <- function(x){eval(parse(text = paste0(x)))}
@@ -32,9 +32,10 @@ for(i in 3:length(histVars)){
   SetToMissing <- VarUnique[!(VarUnique %in% lstseq[[i]])]
   SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
 }
+colnames(SFHist) <- histCodeNameValid$VarName
 codebook(SFHist)
 
-
+ncol(SFHist)
 #Split Presidential years from congressional/governor
 PresYears <- c(2016, 2012, 2008, 2004, 2000,	1996,	1992,	1988,	1984,	1980,	1976,	1972,	1968,	1964,	1960,	1956,	1952) #Dropped 1948 due to lack of pairwise data
 CongGovYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	1966,	1962,	1958,	1954,	1950)
@@ -42,18 +43,251 @@ CongGovYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	19
 dfHistPres <- dfHist[dfHist$Year %in% PresYears,]
 dfHistConGov <- dfHist[dfHist$Year %in% CongGovYears,]
 ```
-
+create var for num media types / acts
 ```{r import 2016}
 library(foreign)
 library(memisc)
 
 dat16 <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_2016_sav(2)/anes_timeseries_2016.sav"))
-histVars16 <- trimws(as.character(histCodeName$varCode16))
-dfHist16 <- subset(datHist, select = histVars16)
+histVars16 <- trimws(as.character(histCodeNameValid$A2016))
+histVars16 = histVars16[histVars16 != ""]
+dfHist16 <- subset(dat16, select = histVars16)
 
+varNames16 <- trimws(levels(histCodeNameValid$A2016))
+varNames16 = varNames16[varNames16 != ""]
+histVarNames16 <- histCodeNameValid$VarName[(trimws(histCodeNameValid$A2016) %in% noquote(varNames16))]
+colnames(dfHist16) <- histVarNames16
 
+dfHist16Re <- within(dfHist16,{
+     missing.values(Gender) <- c(-9, -8, 3)
+     missing.values(Age) <- c(-9, -8)
+     missing.values(Education) <- c(-9, -8, 90, 95)
+     recode(Education,
+            'Grade school or less (0-8 grades)' = 1 <- c(1,2,3,4),
+            'High school (12 grades or fewer, incl. non-college' = 2 <- c(5,6,7,8,9),
+            'Some college (13 grades or more but no degree' = 3 <- c(10),
+            'College or advanced degree (no cases 1948)' = 4 <- c(11,12,13,14,15,16))
+     #income group
+     #occupation switch with work status:
+     recode(Occupation,
+            '1. Working now' = 1 <- c(10,15,16,17,18),
+            '2. Temporarily laid off' = 2 <- c(20),
+            '4. Unemployed' = 3 <- c(40),
+            '5. Retired' = 4 <- c(50,51),
+            '6. Permanently disabled' = 5 <- c(60, 61),
+            '7. Homemaker' = 6 <- c(70,71,75),
+            '8. Student' = 7 <- c(80,81))
+     missing.values(Occupation) <- c(-9)
+     recode(UnionMember,
+            '1. Yes, someone (1948: head) in household belongs to a' = 1 <- c(1),
+            '2. No, no one in household belongs to a labor union' = 2 <- c(2))
+     missing.values(UnionMember) <- c(-9,-8)
+     #no 2016 religion?
+     recode(ChurchAttendance70,
+            '1. Every week (Except 1970: almost every week)' = 1 <- c(1),
+            '2. Almost every week (no cases in 1970)' = 2 <- c(2),
+            '3. Once or twice a month' = 3 <- c(3),
+            '4. A few times a year' = 4 <- c(4),
+            '5. Never (1990 and later: No in filter)' = 5 <- c(5))
+     missing.values(ChurchAttendance70) <- c(-9,-8,-1)
+     recode(Education6,
+            '1. 8 grades or less (grade school)' = 1 <- c(1,2,3,4),
+            '2. 9-12 grades (high school), no diploma/equivalency' = 2 <- c(5,6,7,8),
+            '3. 12 grades, diploma or equivalency' = 3 <- c(9, 90), 
+            '5. Some college, no degree; junior/community college' = 5 <- c(10,11,12),
+            '6. BA level degrees; advanced degrees incl. LLB' = 6 <- c(13,14,15,16))
+     missing.values(Education6) <- c(-9,-8, 95)
+     recode(NativeParents,
+            '1. Yes' = 1 <- c(1),
+            '5. No' = 5 <- c(2,3))
+     missing.values(NativeParents) <- c(-9,-8)
+     recode(FamilyHomeOwner,
+            '1. Yes, own' = 1 <- c(2,3),
+            '2. No, not owned' = 2 <- c(1,4))
+     missing.values(FamilyHomeOwner) <- c(-9,-8)
+     recode(MaritalStatus,
+            '1. Married' = 1 <- c(1,2),
+            '2. Never married' = 2 <- c(6),                                                                                         
+            '3. Divorced' = 3 <- c(4),                                                                                                 
+            '4. Separated' = 4 <- c(5),                                                                                     
+            '5. Widowed' = 5 <- c(3))
+     missing.values(MaritalStatus) <- c(-8,-9)
+     #social class not coded yet
+     recode(JobWorry,
+            '1. A lot' = 1 <- c(4,5),
+            '3. Somewhat' = 3 <- c(2,3),
+            '5. Not much at all' = 5 <- c(1))
+     missing.values(JobWorry) <- c(-8,-9, -1)
+     missing.values(DemTherm) <- c(-99, -89, -88)
+     missing.values(RepTherm) <- c(-99, -89, -88)
+     missing.values(LiberalsTherm) <- c(-99, -89, -88)
+     missing.values(ConservativesTherm) <- c(-99, -89, -88)
+     recode(PoliticalInterest,
+           '1. Not much interested' = 1 <- c(3,4),
+           '2. Somewhat interested' = 2 <- c(2),
+           '3. Very much interested' = 1 <- c(1))
+     missing.values(PoliticalInterest) <- c(-6,-7,-8,-9)
+     recode(CarePartyPres,
+           '1. Dont care very much or DK, pro-con, depends, and' = 1 <- c(5,4,3),
+           '2. Care a good deal' = 2 <- c(1,2))
+     missing.values(CarePartyPres) <- c(-8,-9)
+     #check this (public affairs vs campaigns)
+     recode(InterestPublicAffaris,
+          '1. Hardly at all (1960,1962: not much at all)' = 1 <- c(3),
+          '3. Some of the time (1960,1962: fairly closely)' = 3 <- c(2),
+          '4. Most of the time (1960,1962: very closely)' = 4 <- c(1))
+     missing.values(InterestPublicAffaris) <- c(-8,-9) #?? not showing
+     recode(DemCandAngry,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandAngry) <- c(-8,-9)
+     recode(DemCandAfraid,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandAfraid) <- c(-8,-9)
+     recode(DemCandHopeful,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandHopeful) <- c(-8,-9)
+     recode(DemCandProud,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandProud) <- c(-8,-9)
+     recode(DemCandKnowledge,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandKnowledge) <- c(-8,-9)
+     recode(DemCandLeader,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandLeader) <- c(-8,-9)
+     recode(DemCandCares,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandCares) <- c(-8,-9)
+     recode(RepCandKnowledge,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandKnowledge) <- c(-8,-9)
+     recode(RepCandLeader,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandLeader) <- c(-8,-9)
+     recode(RepCandCares,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandCares) <- c(-8,-9)
+     recode(RepCandAngry,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandAngry) <- c(-8,-9)
+     recode(RepCandAfraid,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandAfraid) <- c(-8,-9)
+     recode(RepCandHopeful,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandHopeful) <- c(-8,-9)
+     recode(RepCandProud,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandProud) <- c(-8,-9)
+     missing.values(USPresTherm) <- c(-88,-89,-99)
+     missing.values(PresPerfApprove) <- c(-8,-9)
+     missing.values(DiffTweenParties) <- c(-9, -8, -7, -6)
+     recode(FedGovInterests,
+          '1. Few big interests' = 1 <- c(1),
+          '2. Benefit of all' = 2 <- c(2))
+     missing.values(FedGovInterests) <- c(-9,-8)
+     recode(FedGovWasteTaxes,
+          '1. A lot' = 1 <- c(1),
+          '2. Some' = 2 <- c(2),
+          '3. Not very much' = 3 <- c(3))
+     missing.values(FedGovWasteTaxes) <- c(-8,-9)
+     recode(GovtCrookedOffic,
+        '1. Quite a few; quite a lot (1958-1972)' = 1 <- c(1,2),       
+        '2. Not many' = 2 <- c(3),                          
+        '3. Hardly any' = 3 <- c(4))
+     missing.values(GovtCrookedOffic) <- c(-6,-7,-8,-9)
+     recode(GovtCareYouThink,
+        '1. Agree' = 1 <- c(1,2),
+        '2. Disagree' = 2 <- c(4,5),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(GovtCareYouThink) <- c(-6,-7,-8,-9)
+     recode(HaveSayInGovt,
+        '1. Agree' = 1 <- c(4,5),
+        '2. Disagree' = 2 <- c(1,2),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(HaveSayInGovt) <- c(-6,-7,-8,-9)
+     recode(PolGovComplicated,
+        '1. Agree' = 1 <- c(1,2),
+        '2. Disagree' = 2 <- c(4,5),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(PolGovComplicated) <- c(-6,-7,-8,-9)
+     recode(TrustPeople,
+        '1. Cant be too careful' = 1 <- c(3,4,5),
+        '2. Most people can be trusted' = 2 <- c(1,2))
+     missing.values(TrustPeople) <- c(-8,-9)
+     recode(PrePresIntent,
+        '1. Democratic candidate (with or without qualifications,' = 1 <- c(1),
+        '2. Republican candidate (with or without qualifications,' = 2 <- c(2),
+        '3. Undecided; DK (except 1964)' = 3 <- c(-8,6))
+     missing.values(PrePresIntent) <- c(-9, -1, 5,7,8)
+     recode(PresElectionClose,
+        '1. Will win by quite a bit' = 1 <- c(2),
+        '2. Close race' = 2 <- c(1))
+     missing.values(PresElectionClose) <- c(-9,-8, -1)
+     #NEED PRESINTENDACTUAL/requires logic !!
+     recode(Registered,
+        '1. No' = 1 <- c(3),
+        '2. Yes (includes Rs who reported voting)' = 2 <- c(1,2))
+     missing.values(Registered) <- c(-9,-8)
+     missing.values(Registered) <- c(-9,-8,-99)
+     missing.values(BetterOffUSIsolated) <- c(-9,-8)
+     missing.values(AidToBlacksScale) <- c(-9,-8,99)
+     missing.values(WhenAbortionAllow) <- c(-9,-8)
+     missing.values(ReligionImportant) <- c(-9,-8)
+     missing.values(ReligiousGuidance) <- c(-9,-8,-1)
+     missing.values(LifestyleSocietyBreak) <- c(-9,-8,-7,-6)
+     missing.values(EmphasisTradMoreValues) <- c(-9,-8,-7,-6)
+     recode(EconomyBetterWorse,
+            '5. Worse' = 5 <- c(3))
+     missing.values(EconomyBetterWorse) <- c(-8,-9)
+     recode(LawGays,
+             '5. Oppose' = 5 <- c(2))
+     missing.values(LawGays) <- c(-8,-9)
+     recode(BetterOrWorseOff,
+            '1. Better Now' = 1 <- c(1,2),
+            '2. Same (2004: Volunteered)' = 2 <- c(3),
+            '3. Worse Now' = 3 <- c(4,5))
+     missing.values(BetterOrWorseOff) <- c(-8,-9)
+     recode(FedSpendSchool,
+            '1.   Increased' = 1 <- c(1),
+            '2.   Same' = 2 <- c(3),
+            '3.   Decreased (before 2012: or cut out entirely)' = 3 <- c(2))
+     missing.values(FedSpendSchool) <- c(-8,-9)
+     recode(PresPrefStrength,
+            '1. Strong' = 1 <- c(11,21,31,41,51),
+            '5. Not strong' = 5 <- c(10,20,30,40,50))
+     missing.values(PresPrefStrength) <- c(1)
+     })
 
-codebook(dfHist16$vcf0004)
+codebook(dfHist16$PresPrefStrength)
+codebook(SFHist$PresPrefStrength)
+codebook(dat16$v162244 )
 head(dat16)
 head(histCodeNameValid)
 class(dfHist16$vcf0004)
