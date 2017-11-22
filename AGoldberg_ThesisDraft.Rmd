@@ -33,7 +33,6 @@ for(i in 3:length(histVars)){
   SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
 }
 colnames(SFHist) <- histCodeNameValid$VarName
-codebook(SFHist)
 
 ncol(SFHist)
 #Split Presidential years from congressional/governor
@@ -69,14 +68,14 @@ dfHist16Re <- within(dfHist16,{
             'College or advanced degree (no cases 1948)' = 4 <- c(11,12,13,14,15,16))
      #income group
      #occupation switch with work status:
-     recode(Occupation,
-            '1. Working now' = 1 <- c(10,15,16,17,18),
-            '2. Temporarily laid off' = 2 <- c(20),
-            '4. Unemployed' = 3 <- c(40),
-            '5. Retired' = 4 <- c(50,51),
-            '6. Permanently disabled' = 5 <- c(60, 61),
-            '7. Homemaker' = 6 <- c(70,71,75),
-            '8. Student' = 7 <- c(80,81))
+     # recode(Occupation,
+     #        '1. Working now' = 1 <- c(10,15,16,17,18),
+     #        '2. Temporarily laid off' = 2 <- c(20),
+     #        '4. Unemployed' = 3 <- c(40),
+     #        '5. Retired' = 4 <- c(50,51),
+     #        '6. Permanently disabled' = 5 <- c(60, 61),
+     #        '7. Homemaker' = 6 <- c(70,71,75),
+     #        '8. Student' = 7 <- c(80,81))
      missing.values(Occupation) <- c(-9)
      recode(UnionMember,
             '1. Yes, someone (1948: head) in household belongs to a' = 1 <- c(1),
@@ -107,8 +106,8 @@ dfHist16Re <- within(dfHist16,{
      missing.values(FamilyHomeOwner) <- c(-9,-8)
      recode(MaritalStatus,
             '1. Married' = 1 <- c(1,2),
-            '2. Never married' = 2 <- c(6),                                                                                         
-            '3. Divorced' = 3 <- c(4),                                                                                                 
+            '2. Never married' = 2 <- c(6),                                                                                   
+            '3. Divorced' = 3 <- c(4),                                                                                        
             '4. Separated' = 4 <- c(5),                                                                                     
             '5. Widowed' = 5 <- c(3))
      missing.values(MaritalStatus) <- c(-8,-9)
@@ -132,11 +131,11 @@ dfHist16Re <- within(dfHist16,{
            '2. Care a good deal' = 2 <- c(1,2))
      missing.values(CarePartyPres) <- c(-8,-9)
      #check this (public affairs vs campaigns)
-     recode(InterestPublicAffaris,
+     recode(InterestPublicAffairs,
           '1. Hardly at all (1960,1962: not much at all)' = 1 <- c(3),
           '3. Some of the time (1960,1962: fairly closely)' = 3 <- c(2),
           '4. Most of the time (1960,1962: very closely)' = 4 <- c(1))
-     missing.values(InterestPublicAffaris) <- c(-8,-9) #?? not showing
+     missing.values(InterestPublicAffairs) <- c(-8,-9) #?? not showing
      recode(DemCandAngry,
           '1. Yes, have felt' = 1 <- c(5,4,3),
           '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
@@ -283,14 +282,31 @@ dfHist16Re <- within(dfHist16,{
             '1. Strong' = 1 <- c(11,21,31,41,51),
             '5. Not strong' = 5 <- c(10,20,30,40,50))
      missing.values(PresPrefStrength) <- c(1)
+     
+     PresIntendActual <- cases(
+       
+     )
      })
 
-codebook(dfHist16$PresPrefStrength)
-codebook(SFHist$PresPrefStrength)
-codebook(dat16$v162244 )
+#vertically combine the historic and 2016 data sets
+SFHistMerge <- SFHist[colnames(dfHist16)]
+dfComb <- rbind(SFHistMerge,dfHist16Re)
+
+codebook(dfComb$Partisan7)
+codebook(dfHist16$PrePresIntent)
+
+codebook(SFHist$PresIntendActual)
+codebook(dat16$v162066x)
+codebook(dat16$v162058x)
+codebook(dat16$v162062x)
+codebook(dat16$v162066x)
+codebook(dat16$v161031)
+
 head(dat16)
 head(histCodeNameValid)
-class(dfHist16$vcf0004)
+
+codebook(dfHist16$)
+
 class(dfHist16[["vcf0004"]])
 Pre16info <- dat[PreVar]
 names(Pre16info) <- PreCol
