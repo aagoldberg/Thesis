@@ -21,10 +21,14 @@ SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes
 #Upload chosen variable list and select -- data.set
 histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
 histVars <- trimws(as.character(histCodeNameValid$varCodeHist))
+histVars <- histVars[histVars != ""]
+
 
 vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')') #Got some help on this
 fctParse <- function(x){eval(parse(text = paste0(x)))}
 lstseq <- lapply(vctseqmod, fctParse)
+
+
 
 SFHist <- datHist[histVars]  
 for(i in 3:length(histVars)){
@@ -32,9 +36,11 @@ for(i in 3:length(histVars)){
   SetToMissing <- VarUnique[!(VarUnique %in% lstseq[[i]])]
   SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
 }
-colnames(SFHist) <- histCodeNameValid$VarName
 
-ncol(SFHist)
+histVarNames <- trimws(as.character(histCodeNameValid$VarName))
+histVarNames <- histVarNames[histVarNames != ""]
+colnames(SFHist) <- histVarNames
+
 #Split Presidential years from congressional/governor
 PresYears <- c(2016, 2012, 2008, 2004, 2000,	1996,	1992,	1988,	1984,	1980,	1976,	1972,	1968,	1964,	1960,	1956,	1952) #Dropped 1948 due to lack of pairwise data
 CongGovYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	1966,	1962,	1958,	1954,	1950)
@@ -57,6 +63,9 @@ varNames16 = varNames16[varNames16 != ""]
 histVarNames16 <- histCodeNameValid$VarName[(trimws(histCodeNameValid$A2016) %in% noquote(varNames16))]
 colnames(dfHist16) <- histVarNames16
 
+#create NumPoliticalActs variable to match historic data
+
+codebook(dat16$v162011)
 dfHist16Re <- within(dfHist16,{
      missing.values(Gender) <- c(-9, -8, 3)
      missing.values(Age) <- c(-9, -8)
@@ -236,6 +245,9 @@ dfHist16Re <- within(dfHist16,{
         '2. Disagree' = 2 <- c(4,5),
         '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
      missing.values(PolGovComplicated) <- c(-6,-7,-8,-9)
+     recode(VoteMatters,
+        '1. Agree (2000: agree strongly/somewhat)' = 1 <- c(5),
+        '2. Disagree (2000: disagree strongly/somewhat)' = 2 <- c(1))
      recode(TrustPeople,
         '1. Cant be too careful' = 1 <- c(3,4,5),
         '2. Most people can be trusted' = 2 <- c(1,2))
@@ -284,9 +296,18 @@ dfHist16Re <- within(dfHist16,{
      missing.values(PresPrefStrength) <- c(1)
      
      PresIntendActual <- cases(
-       
-     )
+       PrePresIntent == 1  & PresPrefStrength == 10:11 -> "1. INTENDED Democratic: voted Democratic",
+       PrePresIntent == c(-8,6) & PresPrefStrength == 10:11 -> "2. INTENDED undecided: voted Democratic",
+       PrePresIntent == 2 & PresPrefStrength == 10:11 ->"3. INTENDED Republican: voted Democratic",
+       PrePresIntent == 1 & PresPrefStrength == c(30,31,41,42,51,52) -> "4. INTENDED Democratic: did not vote/voted 'other'",
+       PrePresIntent == c(-8,6) & PresPrefStrength == c(30,31,41,42,51,52) -> "5. INTENDED undecided: did not vote/voted 'other'",
+       PrePresIntent == 2 & PresPrefStrength == c(30,31,41,42,51,52) ->"6. INTENDED Republican: did not vote/voted 'other'",
+       PrePresIntent == 1 & PresPrefStrength == 20:21 -> "7. INTENDED Democratic: voted Republican",
+       PrePresIntent == c(-8,6) & PresPrefStrength == 20:21 -> "8. INTENDED undecided: voted Republican",
+       PrePresIntent == 2 & PresPrefStrength == 20:21 -> "9. INTENDED Republican: voted Republican")
      })
+codebook(dfHist16$InterestPublicAffairs)
+codebook(SFHist$InterestPublicAffairs)
 
 #vertically combine the historic and 2016 data sets
 SFHistMerge <- SFHist[colnames(dfHist16)]
@@ -295,12 +316,12 @@ dfComb <- rbind(SFHistMerge,dfHist16Re)
 codebook(dfComb$Partisan7)
 codebook(dfHist16$PrePresIntent)
 
-codebook(SFHist$PresIntendActual)
-codebook(dat16$v162066x)
+codebook(SFHist$VoteMatters)
+codebook(dat16$v162282)
 codebook(dat16$v162058x)
 codebook(dat16$v162062x)
 codebook(dat16$v162066x)
-codebook(dat16$v161031)
+codebook(dat16$v161030)
 
 head(dat16)
 head(histCodeNameValid)
