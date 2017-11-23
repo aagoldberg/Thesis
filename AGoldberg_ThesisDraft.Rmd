@@ -67,6 +67,14 @@ colnames(dfHist16) <- histVarNames16
 dat16$NumParticActs6 <- rowSums(as.data.frame(dat16[c("v162010", "v162011", "v162012", "v162013", "v162014")]) == "2. No") + 1
 dfHist16$NumParticActs6 <- dat16$NumParticActs6
 
+#Add placeholder variables for data not yet published from 2016
+table(SFHist$NationalTicketSplit)
+dfHist16$LocalTicketSplit <- NA
+dfHist16$DecisionTime <- NA
+dfHist16$NationalTicketSplit <- NA
+dfHist16$IncomeGroup <- NA
+dfHist16$SocialClass <- NA
+
 dfHist16Re <- within(dfHist16,{
      missing.values(Gender) <- c(-9, -8, 3)
      missing.values(Age) <- c(-9, -8)
@@ -295,56 +303,109 @@ dfHist16Re <- within(dfHist16,{
             '1. Strong' = 1 <- c(11,21,31,41,51),
             '5. Not strong' = 5 <- c(10,20,30,40,50))
      missing.values(PresPrefStrength) <- c(1)
-     recode()
+     missing.values(NumMediaTypes) <- c(-9,-8,-1)
+     description(PresIntendActual) <- "Handcoded Combination of PreIntend and PostActual vote"
      PresIntendActual <- cases(
-       PrePresIntent == 1  & PresPrefStrength == 10:11 -> "1. INTENDED Democratic: voted Democratic",
-       PrePresIntent == c(-8,6) & PresPrefStrength == 10:11 -> "2. INTENDED undecided: voted Democratic",
-       PrePresIntent == 2 & PresPrefStrength == 10:11 ->"3. INTENDED Republican: voted Democratic",
-       PrePresIntent == 1 & PresPrefStrength == c(30,31,41,42,51,52) -> "4. INTENDED Democratic: did not vote/voted 'other'",
-       PrePresIntent == c(-8,6) & PresPrefStrength == c(30,31,41,42,51,52) -> "5. INTENDED undecided: did not vote/voted 'other'",
-       PrePresIntent == 2 & PresPrefStrength == c(30,31,41,42,51,52) ->"6. INTENDED Republican: did not vote/voted 'other'",
-       PrePresIntent == 1 & PresPrefStrength == 20:21 -> "7. INTENDED Democratic: voted Republican",
-       PrePresIntent == c(-8,6) & PresPrefStrength == 20:21 -> "8. INTENDED undecided: voted Republican",
-       PrePresIntent == 2 & PresPrefStrength == 20:21 -> "9. INTENDED Republican: voted Republican")
+       PrePresIntent == 1  & PresPrefStrength %in% 10:11 -> 1,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% 10:11 -> 2,
+       PrePresIntent == 2 & PresPrefStrength %in% 10:11 -> 3,
+       PrePresIntent == 1 & PresPrefStrength %in% c(30,31,41,42,51,52) -> 4,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% c(30,31,41,42,51,52) -> 5,
+       PrePresIntent == 2 & PresPrefStrength %in% c(30,31,41,42,51,52) ->6,
+       PrePresIntent == 1 & PresPrefStrength %in% 20:21 -> 7,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% 20:21 -> 8,
+       PrePresIntent == 2 & PresPrefStrength %in% 20:21 -> 9)
+     labels(PresIntendActual) <- c(
+                  "1. INTENDED Democratic: voted Democratic"  = 1,
+                  "2. INTENDED undecided: voted Democratic" = 2,
+                  "3. INTENDED Republican: voted Democratic" = 3,
+                  "4. INTENDED Democratic: did not vote/voted 'other'" = 4,
+                  "5. INTENDED undecided: did not vote/voted 'other'" = 5,
+                  "6. INTENDED Republican: did not vote/voted 'other'" = 6,
+                  "7. INTENDED Democratic: voted Republican" = 7,
+                  "8. INTENDED undecided: voted Republican" = 8,
+                  "9. INTENDED Republican: voted Republican" = 9,
+                  "NA" = 0)
+     missing.values(PresIntendActual) <- c(NA)
      })
-codebook(dfHist16$NumParticActs6)
-codebook(SFHist$NumParticActs6)
 
 #vertically combine the historic and 2016 data sets
 SFHistMerge <- SFHist[colnames(dfHist16)]
 dfComb <- rbind(SFHistMerge,dfHist16Re)
-
-codebook(dfComb$Partisan7)
-codebook(dfHist16$PrePresIntent)
-
-codebook(SFHist$NumMediaTypes)
-codebook(dat16$v161009)
-codebook(dat16$v162244)
-codebook(dat16$v162062x)
-codebook(dat16$v162066x)
-codebook(dat16$v161030)
-
-head(dat16)
-head(histCodeNameValid)
-
-codebook(dfHist16$)
-
-class(dfHist16[["vcf0004"]])
-Pre16info <- dat[PreVar]
-names(Pre16info) <- PreCol
-Pre16df <- data.frame(Reduce(cbind, Pre16info))
-colnames(Pre16df) <- PreCol
-#str(Pre16info)
-#summary(Pre16info$SummaryPrePres)
-#summary(Pre16info$VotePresPref)
-
-Post16info <- dat[PostVar]
-names(Post16info) <- PostCol
-Post16df <- data.frame(Reduce(cbind, Post16info))
-colnames(Post16df) <- PostCol
-
-head(dat16)
-SFHist[1]
+dfComb$PresIntendActual
+#Create Switcher types, recode missing values to 2016 vars not yet published 
+dfCombSwitch <- within(dfComb,{ #figure out nulls!
+  Switcher <- cases(
+      PresIntendActual %in% c(2,3,4,6,7,8) -> 1, 
+      PresIntendActual %in% c(1,5,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(Switcher) <- c(
+    Switcher = 1,
+    NonSwitcher = 0)
+  PartyBreaker <- cases(
+      PresIntendActual %in% c(2,3) -> 1, #Dem breaker
+      PresIntendActual %in% c(7,8) -> 3, #Rep breaker
+      PresIntendActual %in% c(4,6) -> 2, 
+      PresIntendActual %in% c(1,5,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(PartyBreaker) <- c(
+    Switcher = 1,
+    NonSwitcher = 0)
+  DemBreaker <- cases(
+      PresIntendActual %in% c(2,3) -> 1, 
+      PresIntendActual %in% c(1,4:9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(DemBreaker) <- c(
+    DemBreaker = 1,
+    NonDemBreaker = 0)
+  RepBreaker = cases(
+      PresIntendActual %in% c(7,8) -> 1, 
+      PresIntendActual %in% c(1:6,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(RepBreaker) <- c(
+    RepBreaker = 1,
+    NonRepBreaker = 0)
+  UndBreaker = cases(
+      PresIntendActual %in% c(4,6) -> 1, 
+      PresIntendActual %in% c(1:3,5,7:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Break to Inf (1) or not (0)
+  labels(UndBreaker) <- c(
+    UndBreaker = 1,
+    NonUndBreaker = 0)
+  Dem2RepSwitcher = cases(
+      PresIntendActual == 7 -> 1,
+      PresIntendActual %in% c(1:6, 8:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Switch from Dem to Rep (1) or not (0)
+  labels(Dem2RepSwitcher) <- c(
+    Dem2RepSwitcher = 1,
+    NonDem2RepSwitcher = 0)
+  Rep2DemSwitcher = cases(
+      PresIntendActual == 3 -> 1, 
+      PresIntendActual %in% c(1:2, 4:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Switch from Rep to Dem (1) or not (0)
+  labels(Rep2DemSwitcher) <- c(
+    Rep2DemSwitcher = 1,
+    NonRep2DemSwitcher = 0)
+  TicketSplitPresSen = cases(
+      NationalTicketSplit %in% c(2,3) -> 1, 
+      NationalTicketSplit %in% c(1,4) -> 0,
+      NationalTicketSplit == 0 -> NA)
+  labels(TicketSplitPresSen) <- c(
+    TicketSplitterPresSen = 1,
+    NonTicketSplitterPresSen = 0)
+  TicketSplitLocal = cases(
+      LocalTicketSplit %in% c(2,3,4) -> 1, 
+      LocalTicketSplit %in% c(1,5) -> 0,
+      LocalTicketSplit == 0 -> NA)
+  labels(TicketSplitLocal) <- c(
+    TicketSplitterLocal = 1,
+    NonTicketSplitterLocal = 0)
+  #missing.values(TicketSplitPresSen) <- NA
+  #missing.values(TicketSplitLocal) <- NA
+  missing.values(LocalTicketSplit) <- 0
+  missing.values(NationalTicketSplit) <- 0
+})
+codebook(dfCombSwitch$DemBreaker)
 ```
 
 
