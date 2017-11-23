@@ -332,13 +332,31 @@ dfHist16Re <- within(dfHist16,{
                   "9. INTENDED Republican: voted Republican" = 9,
                   "NA" = 0)
      missing.values(PresIntendActual) <- c(NA)
-     White <- cases(Race4)
+     White <- cases(Race4 == 1 -> 1,
+                    Race4 %in% c(2,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(White) <- c(
+                    White = 1,
+                    NonWhite = 0)
+     Black <- cases(Race4 == 2 -> 1,
+                    Race4 %in% c(1,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Black) <- c(
+                    Black = 1,
+                    NonBlack = 0)
+     Hispanic <- cases(Race4 == 4 -> 1,
+                    Race4 %in% c(1,2,3,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Hispanic) <- c(
+                    Hispanic = 1,
+                    NonHispanic = 0)
      })
-codebook(dfHist16Re$Race4)
+codebook(dfHist16$InterestPublicAffairs)
 #vertically combine the historic and 2016 data sets
 SFHistMerge <- SFHist[colnames(dfHist16)]
 dfComb <- rbind(SFHistMerge,dfHist16Re)
 dfComb$PresIntendActual
+
 #Create Switcher types, recode missing values to 2016 vars not yet published 
 dfCombSwitch <- within(dfComb,{ #figure out nulls!
   Switcher <- cases(
@@ -406,8 +424,6 @@ dfCombSwitch <- within(dfComb,{ #figure out nulls!
   labels(TicketSplitLocal) <- c(
     TicketSplitterLocal = 1,
     NonTicketSplitterLocal = 0)
-  #missing.values(TicketSplitPresSen) <- NA
-  #missing.values(TicketSplitLocal) <- NA
   missing.values(LocalTicketSplit) <- 0
   missing.values(NationalTicketSplit) <- 0
 })
