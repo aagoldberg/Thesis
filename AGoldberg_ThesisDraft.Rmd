@@ -14,6 +14,10 @@ library(dplyr)
 library(tidyr)
 library(foreign)
 library(memisc)
+library(missForest)
+library(corrgram)
+library(caret)
+library(corrgram)
 
 datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
 SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav")
@@ -451,26 +455,20 @@ Split by President/Midterm years, categorize variable types
 PresYears <- c(2016, 2012, 2008, 2004, 2000,	1996,	1992,	1988,	1984,	1980,	1976,	1972,	1968,	1964,	1960,	1956,	1952) #Dropped 1948 due to lack of pairwise data
 MidTermYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	1966,	1962,	1958,	1954,	1950)
 
-dfHistPres <- dfCombSwitch[dfCombSwitch$Year %in% PresYears,]
-dfHistMidTerm <- dfCombSwitch[dfCombSwitch$Year %in% MidTermYears,]
+dsHistPres <- dfCombSwitch[dfCombSwitch$Year %in% PresYears,]
+dsHistMidTerm <- dfCombSwitch[dfCombSwitch$Year %in% MidTermYears,]
 
 intervalVars <- c("UniqueCase", "Age", "DemTherm", "RepTherm", "LiberalsTherm", "ConservativesTherm", "USPresTherm", "LengthCommunity", "Year")
 
 #Conversion to numeric for analysis
-dfHistPresNum <- sapply(dfHistPres, as.numeric)
+dfHistPres <- as.data.frame(dsHistPres)
 
+mxHistPres <- sapply((dfHistPres), as.numeric)
 ```
 
 ```{r barcharts}
-HistCln <- data.frame(Reduce(cbind, Pres.cl.switchers))
-colnames(HistCln) <- colnames(Pres.cl.switchers)
-
 table(dfHistPres$ObsInfoLvlPost)
-noninterval <- dfHistPresNum[,(!(colnames(dfHistPresNum) %in% intervalVars))]
-head(dfHistPres)
-codebook(dfHistPres$Gender)
-colnames(noninterval)
-
+noninterval <- dfHistPres[,(!(colnames(dfHistPres) %in% intervalVars))]
 
 par(mfrow = c(3,5), cex = .5)
 for(i in colnames(noninterval)){
@@ -479,5 +477,34 @@ for(i in colnames(noninterval)){
    main = names(noninterval[i]), col="grey", ylab="")
 }
 
+```
+Imputation
+```{r}
+summary(dfHistPres)
+#Remove vars with 20k+ NA's
+HighNA <- c("ObsInfoLvlPost", "DemTherm", "RepTherm", "LiberalsTherm", "ConservativesTherm", "USPresTherm", "VoteMatters", "NumMediaTypes", "AidToBlacksScale", "ReligiousGuidance","LawGays", "LengthCommunity", "PresPrefStrength","Registered","DemCandKnowledge","DemCandLeader","DemCandCares",
+"RepCandKnowledge", "RepCandLeader","RepCandCares","JobWorry")
+
+dfHistPresLowNA <- dfHistPres[, !(names(dfHistPres) %in% HighNA)]
+
+
+SFHistMerge <- SFHistSplit[colnames(dfHist16Re)]
+table((SFHistMerge$UnionMember))
+table((dfHist16Re$UnionMember))
+summary(dfHistPres)
+table(as.numeric(dfHistPres$UnionMember))
+
+
+dfImpMod = missForest(dfHistPresLowNA)
+dfImpMod$OOBerror
+```
+
+Variable Correlations
+```{r}
+library(corrplot)
+correlations <- cor(mxHistPres)
+hc = findCorrelation(correlations, cutoff=0.45)
+length(hc) #18 vars
+corrplot(correlations, order = "hclust", tl.cex = 0.55)
 ```
 https://cran.r-project.org/web/packages/memisc/vignettes/anes48.html
