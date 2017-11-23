@@ -74,8 +74,14 @@ dfHist16$DecisionTime <- NA
 dfHist16$NationalTicketSplit <- NA
 dfHist16$IncomeGroup <- NA
 dfHist16$SocialClass <- NA
+dfHist16$Occupation <- NA
+
+codebook(dfHist16$WorkStatus)
+codebook(SFHist$WorkStatus)
 
 dfHist16Re <- within(dfHist16,{
+     missing.values(ObsInfoLvlPre) <- c(-8,-1)
+     missing.values(ObsInfoLvlPost) <- c(-6,-1)
      missing.values(Gender) <- c(-9, -8, 3)
      missing.values(Age) <- c(-9, -8)
      missing.values(Education) <- c(-9, -8, 90, 95)
@@ -85,16 +91,15 @@ dfHist16Re <- within(dfHist16,{
             'Some college (13 grades or more but no degree' = 3 <- c(10),
             'College or advanced degree (no cases 1948)' = 4 <- c(11,12,13,14,15,16))
      #income group
-     #occupation switch with work status:
-     # recode(Occupation,
-     #        '1. Working now' = 1 <- c(10,15,16,17,18),
-     #        '2. Temporarily laid off' = 2 <- c(20),
-     #        '4. Unemployed' = 3 <- c(40),
-     #        '5. Retired' = 4 <- c(50,51),
-     #        '6. Permanently disabled' = 5 <- c(60, 61),
-     #        '7. Homemaker' = 6 <- c(70,71,75),
-     #        '8. Student' = 7 <- c(80,81))
-     missing.values(Occupation) <- c(-9)
+     recode(WorkStatus,
+             '1. Working now' = 1 <- c(10,15,16,17,18),
+             '2. Temporarily laid off' = 2 <- c(20),
+             '4. Unemployed' = 3 <- c(40),
+             '5. Retired' = 4 <- c(50,51),
+             '6. Permanently disabled' = 5 <- c(60, 61),
+             '7. Homemaker' = 6 <- c(70,71,75),
+             '8. Student' = 7 <- c(80,81))
+     missing.values(WorkStatus) <- c(-9)
      recode(UnionMember,
             '1. Yes, someone (1948: head) in household belongs to a' = 1 <- c(1),
             '2. No, no one in household belongs to a labor union' = 2 <- c(2))
@@ -327,8 +332,9 @@ dfHist16Re <- within(dfHist16,{
                   "9. INTENDED Republican: voted Republican" = 9,
                   "NA" = 0)
      missing.values(PresIntendActual) <- c(NA)
+     White <- cases(Race4)
      })
-
+codebook(dfHist16Re$Race4)
 #vertically combine the historic and 2016 data sets
 SFHistMerge <- SFHist[colnames(dfHist16)]
 dfComb <- rbind(SFHistMerge,dfHist16Re)
