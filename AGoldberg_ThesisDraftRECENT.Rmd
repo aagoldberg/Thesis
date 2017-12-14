@@ -1,0 +1,1058 @@
+---
+title: "ThesisFinal"
+author: "Andrew Goldberg"
+date: "11/20/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import historic, echo=FALSE, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(foreign)
+library(memisc)
+library(missForest)
+library(corrgram)
+library(caret)
+library(corrgram)
+library(knitr)
+
+setwd("C:/Users/andrew/Desktop/Thesis")
+datHist <- as.data.set(spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timseries_cdf.sav"))
+SFdatHist <- spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timseries_cdf.sav")
+#datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
+#SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav")
+#download.file(url= "https://s3.us-east-2.amazonaws.com/andrewgoldberg1/anes_timseries_cdf+(1).sav", destfile="localfile.sav", method = "curl")
+#datHist <- as.data.set(spss.system.file("localfile.sav"))
+
+#Upload chosen variable list and select -- data.set
+histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
+histVars <- trimws(as.character(histCodeNameValid$varCodeHist))
+histVars <- histVars[histVars != ""]
+
+#Limit to viable variables
+vctseqmod <- paste0('c(', gsub('\"', '', histCodeNameValid$Valid), ')')
+fctParse <- function(x){eval(parse(text = paste0(x)))}
+lstseq <- lapply(vctseqmod, fctParse)
+
+SFHist <- datHist[histVars]  
+for(i in 3:length(histVars)){
+  VarUnique <- unique(((SFHist[[histVars[i]]])))
+  SetToMissing <- VarUnique[!(VarUnique %in% lstseq[[i]])]
+  SFHist[[histVars[i]]] <- as.item(SFHist[[histVars[i]]], missing.values = SetToMissing)
+}
+
+histVarNames <- trimws(as.character(histCodeNameValid$VarName))
+histVarNames <- histVarNames[histVarNames != ""]
+colnames(SFHist) <- histVarNames
+
+#Splitting race categories, unflagging age data
+SFHistSplit <- within(SFHist,{
+     White <- cases(Race4 == 1 -> 1,
+                    Race4 %in% c(2,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(White) <- c(
+                    White = 1,
+                    NonWhite = 0)
+     Black <- cases(Race4 == 2 -> 1,
+                    Race4 %in% c(1,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Black) <- c(
+                    Black = 1,
+                    NonBlack = 0)
+     Hispanic <- cases(Race4 == 4 -> 1,
+                    Race4 %in% c(1,2,3,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Hispanic) <- c(
+                    Hispanic = 1,
+                    NonHispanic = 0)
+     valid.values(Age) <- c(18:96)
+     })
+```
+create var for num media types / acts
+```{r import 2016}
+library(foreign)
+library(memisc)
+#download.file(url= "https://s3.us-east-2.amazonaws.com/andrewgoldberg1/anes_timeseries_2016.sav", destfile="localfile16.sav", method = "curl")
+#dat16 <- as.data.set(spss.system.file("localfile16.sav"))
+#dat16 <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_2016_sav(2)/anes_timeseries_2016.sav"))
+dat16 <- as.data.set(spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timeseries_2016.sav"))
+histVars16 <- trimws(as.character(histCodeNameValid$A2016))
+histVars16 = histVars16[histVars16 != ""]
+dfHist16 <- subset(dat16, select = histVars16)
+
+varNames16 <- trimws(levels(histCodeNameValid$A2016))
+varNames16 = varNames16[varNames16 != ""]
+histVarNames16 <- histCodeNameValid$VarName[(trimws(histCodeNameValid$A2016) %in% noquote(varNames16))]
+colnames(dfHist16) <- histVarNames16
+
+#create NumPoliticalActs variable to match historic data
+#written letter/ donate money / display button,sticker / work for party or candidate / attend meetingsmrallies / influence others
+dat16$NumParticActs6 <- rowSums(as.data.frame(dat16[c("v162010", "v162011", "v162012", "v162013", "v162014")]) == "2. No") + 1
+dfHist16$NumParticActs6 <- dat16$NumParticActs6
+
+#Add placeholder variables for data not yet published from 2016
+dfHist16$LocalTicketSplit <- NA
+dfHist16$DecisionTime <- NA
+dfHist16$NationalTicketSplit <- NA
+dfHist16$IncomeGroup <- NA
+dfHist16$SocialClass <- NA
+dfHist16$Occupation <- NA
+dfHist16$Year <- rep("2016", nrow(dfHist16))
+
+dfHist16Re <- within(dfHist16,{
+  missing.values(Age) <- c(-9,-8)
+     missing.values(ObsInfoLvlPre) <- c(-8,-1)
+     missing.values(ObsInfoLvlPost) <- c(-6,-1)
+     missing.values(Gender) <- c(-9, -8, 3)
+     missing.values(Age) <- c(-9, -8)
+     missing.values(Education) <- c(-9, -8, 90, 95)
+     recode(Education,
+            'Grade school or less (0-8 grades)' = 1 <- c(1,2,3,4),
+            'High school (12 grades or fewer, incl. non-college' = 2 <- c(5,6,7,8,9),
+            'Some college (13 grades or more but no degree' = 3 <- c(10),
+            'College or advanced degree (no cases 1948)' = 4 <- c(11,12,13,14,15,16))
+     #income group
+     missing.values(VoteMatters) <- c(-9,-8,-7,-6)
+     missing.values(EqualRights) <- c(-6:-9)
+     recode(WorkStatus,
+             '1. Working now' = 1 <- c(10,15,16,17,18),
+             '2. Temporarily laid off' = 2 <- c(20),
+             '4. Unemployed' = 3 <- c(40),
+             '5. Retired' = 4 <- c(50,51),
+             '6. Permanently disabled' = 5 <- c(60, 61),
+             '7. Homemaker' = 6 <- c(70,71,75),
+             '8. Student' = 7 <- c(80,81))
+     missing.values(WorkStatus) <- c(-9)
+     recode(UnionMember,
+            '1. Yes, someone (1948: head) in household belongs to a' = 1 <- c(1),
+            '2. No, no one in household belongs to a labor union' = 2 <- c(2))
+     missing.values(UnionMember) <- c(-9,-8)
+     #no 2016 religion?
+     recode(ChurchAttendance70,
+            '1. Every week (Except 1970: almost every week)' = 1 <- c(1),
+            '2. Almost every week (no cases in 1970)' = 2 <- c(2),
+            '3. Once or twice a month' = 3 <- c(3),
+            '4. A few times a year' = 4 <- c(4),
+            '5. Never (1990 and later: No in filter)' = 5 <- c(5))
+     missing.values(ChurchAttendance70) <- c(-9,-8,-1)
+     recode(Education6,
+            '1. 8 grades or less (grade school)' = 1 <- c(1,2,3,4),
+            '2. 9-12 grades (high school), no diploma/equivalency' = 2 <- c(5,6,7,8),
+            '3. 12 grades, diploma or equivalency' = 3 <- c(9, 90), 
+            '5. Some college, no degree; junior/community college' = 5 <- c(10,11,12),
+            '6. BA level degrees; advanced degrees incl. LLB' = 6 <- c(13,14,15,16))
+     missing.values(Education6) <- c(-9,-8, 95)
+     recode(NativeParents,
+            '1. Yes' = 1 <- c(1),
+            '5. No' = 5 <- c(2,3))
+     missing.values(NativeParents) <- c(-9,-8)
+     recode(FamilyHomeOwner,
+            '1. Yes, own' = 1 <- c(2,3),
+            '2. No, not owned' = 2 <- c(1,4))
+     missing.values(FamilyHomeOwner) <- c(-9,-8)
+     recode(MaritalStatus,
+            '1. Married' = 1 <- c(1,2),
+            '2. Never married' = 2 <- c(6),          
+            '3. Divorced' = 3 <- c(4),                                                                 
+            '4. Separated' = 4 <- c(5),                                                                 
+            '5. Widowed' = 5 <- c(3))
+     missing.values(MaritalStatus) <- c(-8,-9)
+     #social class not coded yet
+     recode(JobWorry,
+            '1. A lot' = 1 <- c(4,5),
+            '3. Somewhat' = 3 <- c(2,3),
+            '5. Not much at all' = 5 <- c(1))
+     missing.values(JobWorry) <- c(-8,-9, -1)
+     missing.values(DemTherm) <- c(-99, -89, -88)
+     missing.values(RepTherm) <- c(-99, -89, -88)
+     missing.values(LiberalsTherm) <- c(-99, -89, -88)
+     missing.values(ConservativesTherm) <- c(-99, -89, -88)
+     recode(PoliticalInterest,
+           '1. Not much interested' = 1 <- c(3,4),
+           '2. Somewhat interested' = 2 <- c(2),
+           '3. Very much interested' = 1 <- c(1))
+     missing.values(PoliticalInterest) <- c(-6,-7,-8,-9)
+     recode(CarePartyPres,
+           '1. Dont care very much or DK, pro-con, depends, and' = 1 <- c(5,4,3),
+           '2. Care a good deal' = 2 <- c(1,2))
+     missing.values(CarePartyPres) <- c(-8,-9)
+     #check this (public affairs vs campaigns)
+     recode(InterestPublicAffairs,
+          '1. Hardly at all (1960,1962: not much at all)' = 1 <- c(4,5),
+          '3. Some of the time (1960,1962: fairly closely)' = 3 <- c(3),
+          '4. Most of the time (1960,1962: very closely)' = 4 <- c(1,2))
+     missing.values(InterestPublicAffairs) <- c(-8,-9)
+     recode(DemCandAngry,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandAngry) <- c(-8,-9)
+     recode(DemCandAfraid,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandAfraid) <- c(-8,-9)
+     recode(DemCandHopeful,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandHopeful) <- c(-8,-9)
+     recode(DemCandProud,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(DemCandProud) <- c(-8,-9)
+     recode(DemCandKnowledge,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandKnowledge) <- c(-8,-9)
+     recode(DemCandLeader,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandLeader) <- c(-8,-9)
+     recode(DemCandCares,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(DemCandCares) <- c(-8,-9)
+     recode(RepCandKnowledge,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandKnowledge) <- c(-8,-9)
+     recode(RepCandLeader,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandLeader) <- c(-8,-9)
+     recode(RepCandCares,
+          '1. Extremely well' = 1 <- c(1),
+          '2. Quite well' = 2 <- c(2,3),
+          '3. Not too well' = 3 <- c(4),
+          '4. Not well at all' = 4 <- c(5))
+     missing.values(RepCandCares) <- c(-8,-9)
+     recode(RepCandAngry,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandAngry) <- c(-8,-9)
+     recode(RepCandAfraid,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandAfraid) <- c(-8,-9)
+     recode(RepCandHopeful,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandHopeful) <- c(-8,-9)
+     recode(RepCandProud,
+          '1. Yes, have felt' = 1 <- c(5,4,3),
+          '2. No, havent felt (1980 only: DK)' = 2 <- c(1,2))
+     missing.values(RepCandProud) <- c(-8,-9)
+     missing.values(USPresTherm) <- c(-88,-89,-99)
+     missing.values(PresPerfApprove) <- c(-8,-9)
+     missing.values(DiffTweenParties) <- c(-9, -8, -7, -6)
+     missing.values(LibConScale) <- c(-9,-8,99)
+     recode(FedGovInterests,
+          '1. Few big interests' = 1 <- c(1),
+          '2. Benefit of all' = 2 <- c(2))
+     missing.values(FedGovInterests) <- c(-9,-8)
+     recode(FedGovWasteTaxes,
+          '1. A lot' = 1 <- c(1),
+          '2. Some' = 2 <- c(2),
+          '3. Not very much' = 3 <- c(3))
+     missing.values(FedGovWasteTaxes) <- c(-8,-9)
+     recode(GovtCrookedOffic,
+        '1. Quite a few; quite a lot (1958-1972)' = 1 <- c(1,2),       
+        '2. Not many' = 2 <- c(3),                          
+        '3. Hardly any' = 3 <- c(4))
+     missing.values(GovtCrookedOffic) <- c(-6,-7,-8,-9)
+     recode(GovtCareYouThink,
+        '1. Agree' = 1 <- c(1,2),
+        '2. Disagree' = 2 <- c(4,5),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(GovtCareYouThink) <- c(-6,-7,-8,-9)
+     recode(HaveSayInGovt,
+        '1. Agree' = 1 <- c(4,5),
+        '2. Disagree' = 2 <- c(1,2),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(HaveSayInGovt) <- c(-6,-7,-8,-9)
+     recode(PolGovComplicated,
+        '1. Agree' = 1 <- c(1,2),
+        '2. Disagree' = 2 <- c(4,5),
+        '3. Neither agree nor disagree (1988 and later only)' = 3 <- c(3))
+     missing.values(PolGovComplicated) <- c(-6,-7,-8,-9)
+     recode(VoteMatters,
+        '1. Agree (2000: agree strongly/somewhat)' = 1 <- c(5),
+        '2. Disagree (2000: disagree strongly/somewhat)' = 2 <- c(1))
+     recode(TrustPeople,
+        '1. Cant be too careful' = 1 <- c(3,4,5),
+        '2. Most people can be trusted' = 2 <- c(1,2))
+     missing.values(TrustPeople) <- c(-8,-9)
+     recode(PrePresIntent,
+        '1. Democratic candidate (with or without qualifications,' = 1 <- c(1),
+        '2. Republican candidate (with or without qualifications,' = 2 <- c(2),
+        '3. Undecided; DK (except 1964)' = 3 <- c(-8,6))
+     missing.values(PrePresIntent) <- c(-9, -1, 5,7,8)
+     recode(PresElectionClose,
+        '1. Will win by quite a bit' = 1 <- c(2),
+        '2. Close race' = 2 <- c(1))
+     missing.values(PresElectionClose) <- c(-9,-8, -1)
+     #NEED PRESINTENDACTUAL/requires logic !!
+     recode(Registered,
+        '1. No' = 1 <- c(3),
+        '2. Yes (includes Rs who reported voting)' = 2 <- c(1,2))
+     missing.values(Registered) <- c(-9,-8)
+     missing.values(Registered) <- c(-9,-8,-99)
+     missing.values(BetterOffUSIsolated) <- c(-9,-8)
+     missing.values(AidToBlacksScale) <- c(-9,-8,99)
+     missing.values(WhenAbortionAllow) <- c(-9,-8,5)
+     missing.values(ReligionImportant) <- c(-9,-8)
+     missing.values(ReligiousGuidance) <- c(-9,-8,-1)
+     missing.values(LifestyleSocietyBreak) <- c(-9,-8,-7,-6)
+     missing.values(EmphasisTradMoreValues) <- c(-9,-8,-7,-6)
+     recode(EconomyBetterWorse,
+            '5. Worse' = 5 <- c(3))
+     missing.values(EconomyBetterWorse) <- c(-8,-9)
+     recode(LawGays,
+             '5. Oppose' = 5 <- c(2))
+     missing.values(LawGays) <- c(-8,-9)
+     recode(BetterOrWorseOff,
+            '1. Better Now' = 1 <- c(1,2),
+            '2. Same (2004: Volunteered)' = 2 <- c(3),
+            '3. Worse Now' = 3 <- c(4,5))
+     missing.values(BetterOrWorseOff) <- c(-8,-9)
+     recode(FedSpendSchool,
+            '1.   Increased' = 1 <- c(1),
+            '2.   Same' = 2 <- c(3),
+            '3.   Decreased (before 2012: or cut out entirely)' = 3 <- c(2))
+     missing.values(FedSpendSchool) <- c(-8,-9)
+     recode(PresPrefStrength,
+            '1. Strong' = 1 <- c(11,21,31,41,51),
+            '5. Not strong' = 5 <- c(10,20,30,40,50))
+     missing.values(PresPrefStrength) <- c(-1)
+     missing.values(NumMediaTypes) <- c(-9,-8,-1)
+     description(PresIntendActual) <- "Handcoded Combination of PreIntend and PostActual vote"
+     PresIntendActual <- cases(
+       PrePresIntent == 1  & PresPrefStrength %in% 10:11 -> 1,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% 10:11 -> 2,
+       PrePresIntent == 2 & PresPrefStrength %in% 10:11 -> 3,
+       PrePresIntent == 1 & PresPrefStrength %in% c(30,31,41,42,51,52) -> 4,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% c(30,31,41,42,51,52) -> 5,
+       PrePresIntent == 2 & PresPrefStrength %in% c(30,31,41,42,51,52) ->6,
+       PrePresIntent == 1 & PresPrefStrength %in% 20:21 -> 7,
+       PrePresIntent %in% c(-8,6) & PresPrefStrength %in% 20:21 -> 8,
+       PrePresIntent == 2 & PresPrefStrength %in% 20:21 -> 9)
+     labels(PresIntendActual) <- c(
+                  "1. INTENDED Democratic: voted Democratic"  = 1,
+                  "2. INTENDED undecided: voted Democratic" = 2,
+                  "3. INTENDED Republican: voted Democratic" = 3,
+                  "4. INTENDED Democratic: did not vote/voted 'other'" = 4,
+                  "5. INTENDED undecided: did not vote/voted 'other'" = 5,
+                  "6. INTENDED Republican: did not vote/voted 'other'" = 6,
+                  "7. INTENDED Democratic: voted Republican" = 7,
+                  "8. INTENDED undecided: voted Republican" = 8,
+                  "9. INTENDED Republican: voted Republican" = 9,
+                  "NA" = 0)
+     missing.values(PresIntendActual) <- c(0)
+     White <- cases(Race4 == 1 -> 1,
+                    Race4 %in% c(2,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(White) <- c(
+                    White = 1,
+                    NonWhite = 0)
+     Black <- cases(Race4 == 2 -> 1,
+                    Race4 %in% c(1,3,4,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Black) <- c(
+                    Black = 1,
+                    NonBlack = 0)
+     Hispanic <- cases(Race4 == 4 -> 1,
+                    Race4 %in% c(1,2,3,5) -> 0,
+                    Race4 == -9 -> NA)
+     labels(Hispanic) <- c(
+                    Hispanic = 1,
+                    NonHispanic = 0)
+     })
+
+#vertically combine the historic and 2016 data sets
+SFHistMerge <- SFHistSplit[colnames(dfHist16Re)]
+dfComb <- rbind(SFHistMerge,dfHist16Re)
+#summary(dfHist16Re$Age)
+
+
+##playing to get age to work...
+try1 <- sapply((SFHistMerge), as.numeric)
+try2 <- sapply((dfHist16Re), as.numeric)
+
+summary(dfCombSwitch$DemTherm)
+
+#Create Switcher types, recode missing values to 2016 vars not yet published 
+dfCombSwitch <- within(dfComb,{ #figure out nulls!
+  Switcher <- cases(
+      PresIntendActual %in% c(2,3,4,6,7,8) -> 1, 
+      PresIntendActual %in% c(1,5,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(Switcher) <- c(
+    Switcher = 1,
+    NonSwitcher = 0)
+  PartyBreaker <- cases(
+      PresIntendActual %in% c(2,3) -> 1, #Dem breaker
+      PresIntendActual %in% c(7,8) -> 3, #Rep breaker
+      PresIntendActual %in% c(4,6) -> 2, 
+      PresIntendActual %in% c(1,5,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(PartyBreaker) <- c(
+    Switcher = 1,
+    NonSwitcher = 0)
+  DemBreaker <- cases(
+      PresIntendActual %in% c(2,3) -> 1, 
+      PresIntendActual %in% c(1,4:9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(DemBreaker) <- c(
+    DemBreaker = 1,
+    NonDemBreaker = 0)
+  RepBreaker = cases(
+      PresIntendActual %in% c(7,8) -> 1, 
+      PresIntendActual %in% c(1:6,9) -> 0,
+      PresIntendActual %in% c(0) -> NA)
+  labels(RepBreaker) <- c(
+    RepBreaker = 1,
+    NonRepBreaker = 0)
+  UndBreaker = cases(
+      PresIntendActual %in% c(4,6) -> 1, 
+      PresIntendActual %in% c(1:3,5,7:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Break to Inf (1) or not (0)
+  labels(UndBreaker) <- c(
+    UndBreaker = 1,
+    NonUndBreaker = 0)
+  Dem2RepSwitcher = cases(
+      PresIntendActual == 7 -> 1,
+      PresIntendActual %in% c(1:6, 8:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Switch from Dem to Rep (1) or not (0)
+  labels(Dem2RepSwitcher) <- c(
+    Dem2RepSwitcher = 1,
+    NonDem2RepSwitcher = 0)
+  Rep2DemSwitcher = cases(
+      PresIntendActual == 3 -> 1, 
+      PresIntendActual %in% c(1:2, 4:9) -> 0,
+      PresIntendActual %in% c(0) -> NA) #Switch from Rep to Dem (1) or not (0)
+  labels(Rep2DemSwitcher) <- c(
+    Rep2DemSwitcher = 1,
+    NonRep2DemSwitcher = 0)
+  TicketSplitPresSen = cases(
+      NationalTicketSplit %in% c(2,3) -> 1, 
+      NationalTicketSplit %in% c(1,4) -> 0,
+      NationalTicketSplit == 0 -> NA)
+  labels(TicketSplitPresSen) <- c(
+    TicketSplitterPresSen = 1,
+    NonTicketSplitterPresSen = 0)
+  TicketSplitLocal = cases(
+      LocalTicketSplit %in% c(2,3,4) -> 1, 
+      LocalTicketSplit %in% c(1,5) -> 0,
+      LocalTicketSplit == 0 -> NA)
+  labels(TicketSplitLocal) <- c(
+    TicketSplitterLocal = 1,
+    NonTicketSplitterLocal = 0)
+  missing.values(LocalTicketSplit) <- 0
+  missing.values(NationalTicketSplit) <- 0
+  labels(Age) <- c(
+      Legal = c(18:100),
+      Illegal = c(0:17))
+  AgeGroup = cases(
+    Age %in% c(18:29) -> 1,
+    Age %in% c(30:39) -> 2,
+    Age %in% c(40:49) -> 3,
+    Age %in% c(50:59) -> 4,
+    Age %in% c(60:69) -> 5,
+    Age %in% c(70:100) -> 6
+  )
+  missing.values(AgeGroup) <- 0
+  labels(AgeGroup) <- c(
+    "18-29" = 1,
+    "30-39" = 2,
+    "40-49" = 3,
+    "50-59" = 4,
+    "60-69" = 5,
+    "70+" = 6
+  )
+  #labels(Year) <- c(
+   # Legal = c(1952:2016)
+  #)
+  #missing.values(Age) <- c(Legal1, Legal2, Legal3, Legal4, Legal5, Legal6, Legal7, Legal8, Legal9, Legal10, Legal11, Legal12, Legal13, Legal14, Legal15, Legal16, Legal17)
+  #measurement(Age) <- "interval"
+})
+codebook(dfCombSwitch$AgeGroup)
+```
+Split by President/Midterm years, categorize variable types
+```{r}
+#Split Presidential years from congressional/governor
+PresYears <- c(2016, 2012, 2008, 2004, 2000,	1996,	1992,	1988,	1984,	1980,	1976,	1972,	1968,	1964,	1960,	1956,	1952) #Dropped 1948 due to lack of pairwise data
+MidTermYears <- c(2006,	2002,	1998,	1994,	1990,	1986,	1982,	1978,	1974,	1970,	1966,	1962,	1958,	1954,	1950)
+
+dsHistPres <- dfCombSwitch[dfCombSwitch$Year %in% PresYears,]
+dsHistMidTerm <- dfCombSwitch[dfCombSwitch$Year %in% MidTermYears,]
+
+#codebook(dsHistPres$DemTherm)
+#summary(dsHistPres$DemTherm)
+#table(as.numeric(dsHistPres$Year))
+#labels(dsHistPres$Year)
+#summary(as.numeric(dsHistPres$Year))
+intervalVars <- c("UniqueCase", "Age", "DemTherm", "RepTherm", "LiberalsTherm", "ConservativesTherm", "USPresTherm", "LengthCommunity", "Year")
+
+
+#Conversion to numeric/matrix for analysis
+fHistPres <- sapply(dsHistPres, as.factor)
+dfHistPres <- as.data.frame(fHistPres)
+nHistPres <- sapply(dfHistPres, as.numeric)
+
+#Send csv to python for imputation
+write.csv(nHistPres, "forImpute4.csv")
+nrow(dfCombSwitch)
+#Read python imputed data
+miceimputed1 <- read.csv("MiceThesisData1.csv")
+miceimputed1 <- miceimputed1[2:ncol(miceimputed1)]
+colnames(miceimputed1) <- colnames(nHistPres)
+summary(miceimputed1)
+str(miceimputed1)
+library(dplyr)
+#Add age group
+miceimputed1$CorrAge <- miceimputed1$Age+17
+miceimputed1$AgeGroup[between(round(miceimputed1$CorrAge), 18, 29) ] <- 1
+miceimputed1$AgeGroup[between(round(miceimputed1$CorrAge), 30, 39) ] <- 2
+miceimputed1$AgeGroup[between(round(miceimputed1$CorrAge), 40, 49) ] <- 3
+miceimputed1$AgeGroup[between(miceimputed1$CorrAge, 50, 59) ] <- 4
+miceimputed1$AgeGroup[between(miceimputed1$CorrAge, 60, 69) ] <- 5
+miceimputed1$AgeGroup[between(miceimputed1$CorrAge, 70, 100) ] <- 6
+miceimputed1$AgeGroup[is.na(miceimputed1$AgeGroup)] <- 2
+```
+
+Cross-tabs (needs age)
+
+Switcher 
+```{r}
+tab.Switcher.Gender <- xtabs(Switcher~Gender, data = dsHistPres)
+ftable(tab.Switcher.Gender)
+codebook(dsHistPres$Gender)
+
+#Frequencies
+ftab.Switcher.Gender <- ftable(xtabs(~Gender+Switcher, data=dsHistPres))
+ftab.Switcher.Race4 <- ftable(xtabs(~Race4 + Switcher, data=dsHistPres))
+ftab.Switcher.Education <- ftable(xtabs(~Education + Switcher, data=dsHistPres))
+ftab.Switcher.IncomeGroup <- ftable(xtabs(~IncomeGroup + Switcher, data=dsHistPres))
+ftab.Switcher.Occupation <- ftable(xtabs(~Occupation + Switcher, data=dsHistPres))
+ftab.Switcher.Religion <- ftable(xtabs(~Religion + Switcher, data=dsHistPres))
+ftab.Switcher.SocialClass <- ftable(xtabs(~SocialClass + Switcher, data=dsHistPres))
+ftab.Switcher.JobWorry <- ftable(xtabs(~JobWorry + Switcher, data=dsHistPres))
+ftab.Switcher.Year <- ftable(xtabs(~Year + Switcher, data=dsHistPres))
+
+ftab.Switcher <- ftable(xtabs(~Switcher, data = dsHistPres))
+
+#Percentages
+ptab.Switcher.Gender <- percentages(Switcher ~ Gender, data=dsHistPres)
+ptab.Switcher.Race4 <- percentages(Switcher~Race4, data=dsHistPres)
+ptab.Switcher.Education <- percentages(Switcher~Education, data=dsHistPres)
+ptab.Switcher.IncomeGroup <- percentages(Switcher~IncomeGroup, data=dsHistPres)
+ptab.Switcher.Occupation <- percentages(Switcher~Occupation, data=dsHistPres)
+ptab.Switcher.Religion <- percentages(Switcher~Religion,data=dsHistPres)
+ptab.Switcher.SocialClass <- percentages(Switcher~SocialClass, data=dsHistPres)
+ptab.Switcher.JobWorry <- percentages(Switcher~JobWorry, data=dsHistPres)
+ptab.Switcher.Year <- percentages(Switcher~Year, data=dsHistPres)
+ptab.Switcher <- percentages(~Switcher, data = dsHistPres)
+
+fptab.Gender.Switcher <- ftable(ptab.Switcher.Gender, col.vars=1)
+fptab.Race4.Switcher <- ftable(ptab.Switcher.Race4, col.vars=1)
+fptab.Education.Switcher <- ftable(ptab.Switcher.Education, col.vars=1)
+fptab.IncomeGroup.Switcher <- ftable(ptab.Switcher.IncomeGroup, col.vars=1)
+fptab.Occupation.Switcher <- ftable(ptab.Switcher.Occupation, col.vars=1)
+fptab.Religion.Switcher <- ftable(ptab.Switcher.Religion, col.vars=1)
+fptab.SocialClass.Switcher <- ftable(ptab.Switcher.SocialClass, col.vars=1)
+fptab.JobWorry.Switcher <- ftable(ptab.Switcher.JobWorry, col.vars=1)
+fptab.Year.Switcher <- ftable(ptab.Switcher.Year, col.vars=1)
+
+# show_html(
+#   rbind(
+#     fptab.Gender.Switcher,
+#     fptab.Race4.Switcher,
+#     fptab.Education.Switcher,
+#     fptab.IncomeGroup.Switcher,
+#     fptab.Occupation.Switcher,
+#     fptab.Religion.Switcher,
+#     fptab.SocialClass.Switcher,
+#     fptab.Year.Switcher
+#   ),
+#   digits=1
+# )
+
+percSwitcher <-   rbind(
+    fptab.Gender.Switcher,
+    fptab.Race4.Switcher,
+    fptab.Education.Switcher,
+    fptab.IncomeGroup.Switcher,
+    fptab.Occupation.Switcher,
+    fptab.Religion.Switcher,
+    fptab.SocialClass.Switcher,
+    fptab.JobWorry.Switcher,
+    fptab.Year.Switcher
+  )
+
+freqSwitcher <-   rbind(
+    ftab.Switcher.Gender,
+    ftab.Switcher.Race4,
+    ftab.Switcher.Education,
+    ftab.Switcher.IncomeGroup,
+    ftab.Switcher.Occupation,
+    ftab.Switcher.Religion,
+    ftab.Switcher.SocialClass,
+    ftab.Switcher.JobWorry,
+    ftab.Switcher.Year
+  )
+show_html(
+cbind(percSwitcher, freqSwitcher)
+)
+# colnames(dsHistPres)
+# show_html(
+#   rbind(
+#     ftab.Switcher.Gender,
+#     ftab.Switcher.Education,
+#     ftab.Switcher.Race4,
+#     ftab.Switcher.IncomeGroup,
+#     ftab.Switcher.Occupation,
+#     ftab.Switcher.Religion,
+#     ftab.Switcher.SocialClass,
+#     ftab.Switcher.Year
+#   )
+# )
+```
+
+#Partisanship
+```{r}
+#Frequencies
+ftab.Switcher.PartyIdent7 <- ftable(xtabs(~PartyIdent7+Switcher, data=dsHistPres))
+ftab.Switcher.PoliticalInterest <- ftable(xtabs(~PoliticalInterest + Switcher, data=dsHistPres))
+ftab.Switcher.CarePartyPres <- ftable(xtabs(~CarePartyPres + Switcher, data=dsHistPres))
+ftab.Switcher.InterestPublicAffairs <- ftable(xtabs(~InterestPublicAffairs + Switcher, data=dsHistPres))
+
+#Percentages
+ptab.Switcher.PartyIdent7 <- percentages(Switcher ~ PartyIdent7, data=dsHistPres)
+ptab.Switcher.PoliticalInterest <- percentages(Switcher~PoliticalInterest, data=dsHistPres)
+ptab.Switcher.CarePartyPres <- percentages(Switcher~CarePartyPres, data=dsHistPres)
+ptab.Switcher.InterestPublicAffairs <- percentages(Switcher~InterestPublicAffairs, data=dsHistPres)
+
+fptab.PartyIdent7.Switcher <- ftable(ptab.Switcher.PartyIdent7, col.vars=1)
+fptab.PoliticalInterest.Switcher <- ftable(ptab.Switcher.PoliticalInterest, col.vars=1)
+fptab.CarePartyPres.Switcher <- ftable(ptab.Switcher.CarePartyPres, col.vars=1)
+fptab.InterestPublicAffairs.Switcher <- ftable(ptab.Switcher.InterestPublicAffairs, col.vars=1)
+
+# show_html(
+#   rbind(
+#     fptab.PartyIdent7.Switcher,
+#     fptab.PoliticalInterest.Switcher,
+#     fptab.CarePartyPres.Switcher,
+#     fptab.InterestPublicAffairs.Switcher,
+#   ),
+#   digits=1
+# )
+
+percSwitcherPol <-   rbind(
+    fptab.PartyIdent7.Switcher,
+    fptab.PoliticalInterest.Switcher,
+    fptab.CarePartyPres.Switcher,
+    fptab.InterestPublicAffairs.Switcher
+  )
+
+freqSwitcherPol <-   rbind(
+    ftab.Switcher.PartyIdent7,
+    ftab.Switcher.PoliticalInterest,
+    ftab.Switcher.CarePartyPres,
+    ftab.Switcher.InterestPublicAffairs
+  )
+show_html(
+cbind(percSwitcherPol, freqSwitcherPol)
+)
+```
+#Candidate Evaluations
+```{r}
+#Frequencies
+ftab.Switcher.DemCandAngry <- ftable(xtabs(~DemCandAngry+Switcher, data=dsHistPres))
+ftab.Switcher.DemCandAfraid <- ftable(xtabs(~DemCandAfraid + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandHopeful <- ftable(xtabs(~DemCandHopeful + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandProud <- ftable(xtabs(~DemCandProud + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandKnowledge <- ftable(xtabs(~DemCandKnowledge+Switcher, data=dsHistPres))
+ftab.Switcher.DemCandLeader <- ftable(xtabs(~DemCandLeader + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandCares <- ftable(xtabs(~DemCandCares + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandAngry <- ftable(xtabs(~RepCandAngry + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandAfraid <- ftable(xtabs(~RepCandAfraid + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandHopeful <- ftable(xtabs(~RepCandHopeful + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandProud <- ftable(xtabs(~RepCandProud + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandKnowledge <- ftable(xtabs(~RepCandKnowledge + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandLeader <- ftable(xtabs(~RepCandLeader + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandCares <- ftable(xtabs(~RepCandCares + Switcher, data=dsHistPres))
+
+#Percentages
+ptab.Switcher.DemCandAngry <- percentages(Switcher ~ DemCandAngry, data=dsHistPres)
+ptab.Switcher.DemCandAfraid <- percentages(Switcher~DemCandAfraid, data=dsHistPres)
+ptab.Switcher.DemCandHopeful <- percentages(Switcher~DemCandHopeful, data=dsHistPres)
+ptab.Switcher.DemCandProud <- percentages(Switcher~DemCandProud, data=dsHistPres)
+ptab.Switcher.DemCandKnowledge <- percentages(Switcher ~ DemCandKnowledge, data=dsHistPres)
+ptab.Switcher.DemCandLeader <- percentages(Switcher~DemCandLeader, data=dsHistPres)
+ptab.Switcher.DemCandCares <- percentages(Switcher~DemCandCares, data=dsHistPres)
+ptab.Switcher.RepCandAngry <- percentages(Switcher~RepCandAngry, data=dsHistPres)
+ptab.Switcher.RepCandAfraid <- percentages(Switcher~RepCandAfraid, data=dsHistPres)
+ptab.Switcher.RepCandHopeful <- percentages(Switcher~RepCandHopeful,data=dsHistPres)
+ptab.Switcher.RepCandProud <- percentages(Switcher~RepCandProud, data=dsHistPres)
+ptab.Switcher.RepCandKnowledge <- percentages(Switcher~RepCandKnowledge, data=dsHistPres)
+ptab.Switcher.RepCandLeader <- percentages(Switcher~RepCandLeader, data=dsHistPres)
+ptab.Switcher.RepCandCares <- percentages(Switcher~RepCandCares, data=dsHistPres)
+ptab.Switcher <- percentages(~Switcher, data = dsHistPres)
+
+fptab.DemCandAngry.Switcher <- ftable(ptab.Switcher.DemCandAngry, col.vars=1)
+fptab.DemCandAfraid.Switcher <- ftable(ptab.Switcher.DemCandAfraid, col.vars=1)
+fptab.DemCandHopeful.Switcher <- ftable(ptab.Switcher.DemCandHopeful, col.vars=1)
+fptab.DemCandProud.Switcher <- ftable(ptab.Switcher.DemCandProud, col.vars=1)
+fptab.DemCandKnowledge.Switcher <- ftable(ptab.Switcher.DemCandKnowledge, col.vars=1)
+fptab.DemCandLeader.Switcher <- ftable(ptab.Switcher.DemCandLeader, col.vars=1)
+fptab.DemCandCares.Switcher <- ftable(ptab.Switcher.DemCandCares, col.vars=1)
+fptab.RepCandAngry.Switcher <- ftable(ptab.Switcher.RepCandAngry, col.vars=1)
+fptab.RepCandAfraid.Switcher <- ftable(ptab.Switcher.RepCandAfraid, col.vars=1)
+fptab.RepCandHopeful.Switcher <- ftable(ptab.Switcher.RepCandHopeful, col.vars=1)
+fptab.RepCandProud.Switcher <- ftable(ptab.Switcher.RepCandProud, col.vars=1)
+fptab.RepCandKnowledge.Switcher <- ftable(ptab.Switcher.RepCandKnowledge, col.vars=1)
+fptab.RepCandLeader.Switcher <- ftable(ptab.Switcher.RepCandLeader, col.vars=1)
+fptab.RepCandCares.Switcher <- ftable(ptab.Switcher.RepCandCares, col.vars=1)
+# show_html(
+#   rbind(
+#     fptab.DemCandAngry.Switcher,
+#     fptab.DemCandAfraid.Switcher,
+#     fptab.DemCandHopeful.Switcher,
+#     fptab.DemCandProud.Switcher,
+#   ),
+#   digits=1
+# )
+
+percSwitcherCand <-   rbind(
+    fptab.DemCandAngry.Switcher,
+    fptab.DemCandAfraid.Switcher,
+    fptab.DemCandHopeful.Switcher,
+    fptab.DemCandProud.Switcher,
+    fptab.DemCandKnowledge.Switcher,
+    fptab.DemCandLeader.Switcher,
+    fptab.DemCandCares.Switcher,
+    fptab.RepCandAngry.Switcher,
+    fptab.RepCandAfraid.Switcher,
+    fptab.RepCandHopeful.Switcher,
+    fptab.RepCandProud.Switcher,
+    fptab.RepCandKnowledge.Switcher,
+    fptab.RepCandLeader.Switcher,
+    fptab.RepCandCares.Switcher
+  )
+
+freqSwitcherCand <-   rbind(
+    ftab.Switcher.DemCandAngry,
+    ftab.Switcher.DemCandAfraid,
+    ftab.Switcher.DemCandHopeful,
+    ftab.Switcher.DemCandProud,
+    ftab.Switcher.DemCandKnowledge,
+    ftab.Switcher.DemCandLeader,
+    ftab.Switcher.DemCandCares,
+    ftab.Switcher.RepCandAngry,
+    ftab.Switcher.RepCandAfraid,
+    ftab.Switcher.RepCandHopeful,
+    ftab.Switcher.RepCandProud,
+    ftab.Switcher.RepCandKnowledge,
+    ftab.Switcher.RepCandLeader,
+    ftab.Switcher.RepCandCares
+  )
+show_html(
+cbind(percSwitcherCand, freqSwitcherCand)
+)
+```
+#Support for political system
+
+
+```{r barcharts}
+#table(dfHistPres$ObsInfoLvlPost)
+noninterval <- miceimputed1[,(!(colnames(miceimputed1) %in% intervalVars))]
+summary(noninterval)
+
+noninterval1 <- nHistPres[,(!(colnames(nHistPres) %in% intervalVars))]
+
+# par(mfrow = c(3,5), cex = .5)
+# for(i in colnames(noninterval)){
+#   counts <- table(noninterval[i])
+#  barplot(counts, xlab = names(noninterval[i]),
+#    main = names(noninterval[i]), col="grey", ylab="")
+# }
+
+#Histograms of data both before and after imputation
+par(mfrow = c(3,5), cex = .5)
+for(i in colnames(noninterval)){
+ hist(noninterval[,i], xlab = names(noninterval[i]),
+   main = names(noninterval[i]), col="grey", ylab="")
+   hist(noninterval1[,i], xlab = names(noninterval1[i]),
+   main = names(noninterval1[i]), col="gold", ylab="")
+}
+```
+
+```{r warning=F}
+PCA <- function(X) {
+  Xpca <- prcomp(na.omit(X), center = T, scale. = T) 
+  M <- as.matrix(na.omit(X)); R <- as.matrix(Xpca$rotation); score <- M %*% R
+  print(list("Importance of Components" = summary(Xpca)$importance[ ,1:4], 
+             "Correlation between X and PC" = cor(na.omit(X), score)[ ,1:4]))
+  par(mfrow=c(2,3))
+  barplot(Xpca$sdev^2, ylab = "Component Variance")
+  barplot(cor(cbind(X)), ylab = "Correlations")
+  barplot(Xpca$rotation, ylab = "Loadings")  
+  biplot(Xpca); barplot(M); barplot(score)
+}
+PCA(miceimputed1[, -ncol(miceimputed1)])
+```
+Imputation
+```{r}
+library(mice)
+#Remove vars with 20k+ NA's
+HighNA <- c("ObsInfoLvlPost", "DemTherm", "RepTherm", "LiberalsTherm", "ConservativesTherm", "USPresTherm", "VoteMatters", "NumMediaTypes", "AidToBlacksScale", "ReligiousGuidance","LawGays", "LengthCommunity", "PresPrefStrength","Registered","DemCandKnowledge","DemCandLeader","DemCandCares",
+"RepCandKnowledge", "RepCandLeader","RepCandCares","JobWorry")
+# summary(dsHistPres$Age)
+# 
+# dsHistPresLowNA <- dsHistPres[, !names(dsHistPres) %in% HighNA]
+# mxHistPresForImpute <- sapply((dsHistPresLowNA), data.matrix)
+# summary(mxHistPresForImpute)
+
+# dfHistPresLowNA <- dfHistPres[, !(names(dfHistPres) %in% HighNA)]
+# dfHistPresForImpute <- data.matrix(dfHistPresLowNA)
+# 
+# mxHistPresLowNA <- mxHistPres[, !(names(mxHistPres) %in% HighNA)]
+# mxHistPresForImpute <- data.matrix(mxHistPresLowNA)
+# summary(mxHistPres)
+
+# write.csv(dfHistPresLowNA, "thesisdataforimpute.csv")
+# summary(dfHistPresLowNA)
+# getwd()
+# SFHistMerge <- SFHistSplit[colnames(dfHist16Re)]
+# 
+# table(as.numeric(dfHistPres$UnionMember))
+# 
+# 
+# dfImpMod = missForest(dfHistPresLowNA)
+# dfImpMod$OOBerror
+
+#Dependents <- dfHistPresLowNA[c(2:60)]
+#colnames(Pres.cl.m10.mCorr.mHCorr)
+# imp2 <- mice(dfHistPresLowNA, meth='cart', exclude = Dependents)
+# head(dfHistPresLowNA)
+# numericdf <- as.numeric(as.character(dfHistPresLowNA))
+# dfHistPresLowNA[] <- as.numeric(factor(as.matrix(dfHistPresLowNA)))
+# summary(as.numeric(as.matrix(dfHistPresLowNA)))
+# summary(dfHistPresLowNA)
+# summary(mxHistPresforImpute)
+# write.csv(mxHistPresForImpute, "thesisdataforimpute3.csv")
+# summary(dfHistPresLowNA)
+# 
+# miceimputed1 <- read.csv("MiceThesisData1.csv")
+# miceimputed1 <- miceimputed1[2:ncol(miceimputed1)]
+# 
+# colnames(miceimputed1) <- colnames(mxHistPresForImpute)
+# ncol(miceimputed1)
+
+
+```
+
+Variable Correlations
+```{r}
+library(corrplot)
+correlations <- cor(miceimputed1)
+corrplot(correlations, order = "hclust", tl.cex = 0.55)
+```
+X and Y correlations
+```{r}
+library(DT)
+display <- function(data) {
+  datatable(data, options = list(
+    searching = TRUE,
+    pageLength = 5,
+    lengthMenu = c(5, nrow(data))
+    ), rownames = FALSE)
+}
+library(data.table)
+library(Hmisc)
+library(reshape2)
+install.packages("ggplot")
+library(ggplot)
+Corr_XY <- function(X, Y) {
+  corr <- data.frame(array(NA, dim = c(ncol(X), 5)))
+  colnames(corr) <- c("Y", "X", "r","p","<0.05")
+  for (i in 1:ncol(X)) {
+    r <- cor.test(as.numeric(Y), X[, i])
+    corr[i, 1] <- "target"
+    corr[i, 2] <- names(X[i])
+    corr[i, 3] <- round(r$estimate, 6)
+    corr[i, 4] <- round(r$p.value, 6)
+    corr[i, 5] <- corr[i, 4] < 0.05
+  }
+  return(corr)
+}
+
+#Response/Independent var correlation displays for each response
+xVars <- colnames(nHistPres[,c(2:81)])
+colnames(nHistPres)
+Switcher.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"Switcher"])
+display(Switcher.Corr)
+
+PartyBreaker.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"PartyBreaker"])
+display(PartyBreaker.Corr)
+
+DemBreaker.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"DemBreaker"])
+display(DemBreaker.Corr)
+
+RepBreaker.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"RepBreaker"])
+display(RepBreaker.Corr)
+
+UndBreaker.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"UndBreaker"])
+display(UndBreaker.Corr)
+
+DecisionTime.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"DecisionTime"])
+display(DecisionTime.Corr)
+
+TicketSplitPresSen.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"TicketSplitPresSen"])
+display(TicketSplitPresSen.Corr)
+
+TicketSplitLocal.Corr <- Corr_XY(miceimputed1[,xVars], miceimputed1[,"TicketSplitLocal"])
+display(TicketSplitLocal.Corr)
+
+#Create vectors of dileanating dependent and independent columns to use in correlation and regression formulas
+dependent <- c(2:3,5, 7:11, 13, 15:19, 24:42, 44:54, 56, 57, 60, 61:73, 75:81,91)
+SwitcherNum <- c(82)
+PartyBreakerNum <- c(83)
+DemBreakerNum <- c(84)
+RepBreakerNum <- c(85)
+UndBreakerNum <- c(86)
+
+#Removing Highly Correlated Variables
+correlations <- cor(miceimputed1[dependent])
+hc = findCorrelation(correlations, cutoff=0.55)
+hc
+colnames(miceimputed1[dependent][hc])
+dfPresSlim <- miceimputed1[dependent][,-hc]
+colnames(miceimputed1[dependent][,hc])
+colnames(miceimputed1[,dependent])
+colnames(miceimputed1)
+colnames(dfPresSlim)
+(hc) #18 vars
+hc
+hc = findCorrelation(correlations, cutoff=0.45)
+summary(miceimputed1[,hc])
+length(hc) #18 vars
+```
+
+##Build Models
+```{r, echo=FALSE, include=F}
+library(MASS)
+library(elasticnet)
+library(caret)
+library(lars)
+library(pls)
+
+
+
+#summary(miceimputed1[,dependent])
+#colnames(miceimputed1)
+
+```
+
+Democratic Breakers Regression and Summary
+```{r echo=FALSE, include=F}
+#Set up Dem Breaker regression
+DemBrker <- miceimputed1[,c(dependent,DemBreakerNum)]
+DemBrker$DemBreaker <- round(DemBrker$DemBreaker)
+
+#Create binary response factor
+DemBrker <- within (DemBrker, {
+  DemBreaker <- factor(DemBreaker, levels = 1:2, labels = c("DemBreaker", "NonDemBreaker"))
+})
+
+#
+glm.full.dem <- glm(DemBreaker ~ ., data = DemBrker, family = binomial)
+glm.null.dem <- glm(DemBreaker ~ 1, data = DemBrker, family = binomial)
+
+model.aic.forward.dem <- step(glm.null.dem, direction = "forward", trace = 0, scope = list(lower=glm.null.dem, upper=glm.full.dem))
+
+
+#Automated Forward AIC Selection (Backward gave similar results)
+summary(model.aic.forward.dem)
+```
+
+Republican Breakers Regression and Summary
+```{r echo=FALSE, include=F}
+#Set up Rep Breaker regression
+RepBrker <- miceimputed1[,c(dependent,RepBreakerNum)]
+RepBrker$RepBreaker <- round(RepBrker$RepBreaker)
+
+#Create binary response factor
+RepBrker <- within (RepBrker, {
+  RepBreaker <- factor(RepBreaker, levels = 1:2, labels = c("RepBreaker", "NonRepBreaker"))
+})
+
+#
+glm.full.Rep <- glm(RepBreaker ~ ., data = RepBrker, family = binomial)
+glm.null.Rep <- glm(RepBreaker ~ 1, data = RepBrker, family = binomial)
+
+model.aic.forward.Rep <- step(glm.null.Rep, direction = "forward", trace = 0, scope = list(lower=glm.null.Rep, upper=glm.full.Rep))
+
+
+#Automated Forward AIC Selection (Backward gave similar results)
+summary(model.aic.forward.Rep)
+```
+
+Undecided Breakers Regression and Summary
+```{r echo=FALSE, include=F}
+#Set up Und Breaker regression
+UndBrker <- miceimputed1[,c(dependent,UndBreakerNum)]
+UndBrker$UndBreaker <- round(UndBrker$UndBreaker)
+
+#Create binary response factor
+UndBrker <- within (UndBrker, {
+  UndBreaker <- factor(UndBreaker, levels = 1:2, labels = c("UndBreaker", "NonUndBreaker"))
+})
+
+#
+glm.full.Und <- glm(UndBreaker ~ ., data = UndBrker, family = binomial)
+glm.null.Und <- glm(UndBreaker ~ 1, data = UndBrker, family = binomial)
+
+model.aic.forward.Und <- step(glm.null.Und, direction = "forward", trace = 0, scope = list(lower=glm.null.Und, upper=glm.full.Und))
+
+
+#Automated Forward AIC Selection (Backward gave similar results)
+summary(model.aic.forward.Und)
+```
+
+Switchers Regression and Summary
+```{r echo=FALSE, include=F}
+#Set up Und Breaker regression
+Swtchr <- miceimputed1[,c(dependent,SwitcherNum)]
+Swtchr$Switcher <- round(Swtchr$Switcher)
+
+#Create binary response factor
+Swtchr <- within (Swtchr, {
+  Switcher <- factor(Switcher, levels = 1:2, labels = c("Switcher", "NonSwitcher"))
+})
+
+#
+glm.full.Und <- glm(Switcher ~ ., data = Switcher, family = binomial)
+glm.null.Und <- glm(Switcher ~ 1, data = Switcher, family = binomial)
+
+model.aic.forward.Swi <- step(glm.null.Swi, direction = "forward", trace = 0, scope = list(lower=glm.null.Swi, upper=glm.full.Swi))
+
+
+#Automated Forward AIC Selection (Backward gave similar results)
+summary(model.aic.forward.Swi)
+```
+
+https://cran.r-project.org/web/packages/memisc/vignettes/anes48.html
+

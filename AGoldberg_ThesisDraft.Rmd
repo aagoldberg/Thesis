@@ -17,11 +17,10 @@ library(memisc)
 library(missForest)
 library(corrgram)
 library(caret)
-library(corrgram)
 
-datHist <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav"))
-SFdatHist <- spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_cdf_sav/anes_timseries_cdf.sav")
-
+datHist <- as.data.set(spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timseries_cdf.sav"))
+SFdatHist <- spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timseries_cdf.sav")
+getwd()
 #Upload chosen variable list and select -- data.set
 histCodeNameValid <- read.csv("https://raw.githubusercontent.com/aagoldberg/Thesis/master/HistCodeNameViable.csv")
 histVars <- trimws(as.character(histCodeNameValid$varCodeHist))
@@ -68,10 +67,7 @@ SFHistSplit <- within(SFHist,{
 ```
 create var for num media types / acts
 ```{r import 2016}
-library(foreign)
-library(memisc)
-
-dat16 <- as.data.set(spss.system.file("/Users/andrew/Documents/School/Capstone/Data/anes_timeseries_2016_sav(2)/anes_timeseries_2016.sav"))
+dat16 <- as.data.set(spss.system.file("C:/Users/andrew/Desktop/Thesis/anes_timeseries_2016.sav"))
 histVars16 <- trimws(as.character(histCodeNameValid$A2016))
 histVars16 = histVars16[histVars16 != ""]
 dfHist16 <- subset(dat16, select = histVars16)
@@ -486,14 +482,20 @@ HighNA <- c("ObsInfoLvlPost", "DemTherm", "RepTherm", "LiberalsTherm", "Conserva
 "RepCandKnowledge", "RepCandLeader","RepCandCares","JobWorry")
 
 dfHistPresLowNA <- dfHistPres[, !(names(dfHistPres) %in% HighNA)]
+summary(dfHistPresLowNA$Age)
+dfHistPresLowNA[] <- as.numeric(factor(as.matrix(dfHistPresLowNA)))
+summary(dfHistPresLowNA)
 
 
-SFHistMerge <- SFHistSplit[colnames(dfHist16Re)]
-table((SFHistMerge$UnionMember))
-table((dfHist16Re$UnionMember))
-summary(dfHistPres)
-table(as.numeric(dfHistPres$UnionMember))
+write.csv(dfHistPresLowNA, "ThesisImpute.csv")
+tryinggoogle <- read.csv("https://storage.googleapis.com/spss_andrew_gold/ThesisImpute.csv")
+summary(dfHistPresLowNA)
 
+setwd("C:/Users/andrew/Desktop/Thesis")
+Dependents <- dfHistPresLowNA[c(2:60)]
+
+
+summary(dfHistPresLowNA)
 
 dfImpMod = missForest(dfHistPresLowNA)
 dfImpMod$OOBerror
@@ -501,7 +503,6 @@ dfImpMod$OOBerror
 
 Variable Correlations
 ```{r}
-library(corrplot)
 correlations <- cor(mxHistPres)
 hc = findCorrelation(correlations, cutoff=0.45)
 length(hc) #18 vars

@@ -1,0 +1,245 @@
+---
+title: "thesisTabs2"
+author: "Andrew Goldberg"
+date: "December 14, 2017"
+output: html_document
+---
+
+Switcher 
+```{r}
+tab.Switcher.Gender <- xtabs(Switcher~Gender, data = dsHistPres)
+ftable(tab.Switcher.Gender)
+codebook(dsHistPres$Gender)
+
+#Frequencies
+ftab.Switcher.Gender <- ftable(xtabs(~Gender+Switcher, data=dsHistPres))
+ftab.Switcher.Race4 <- ftable(xtabs(~Race4 + Switcher, data=dsHistPres))
+ftab.Switcher.Education <- ftable(xtabs(~Education + Switcher, data=dsHistPres))
+ftab.Switcher.IncomeGroup <- ftable(xtabs(~IncomeGroup + Switcher, data=dsHistPres))
+ftab.Switcher.Occupation <- ftable(xtabs(~Occupation + Switcher, data=dsHistPres))
+ftab.Switcher.Religion <- ftable(xtabs(~Religion + Switcher, data=dsHistPres))
+ftab.Switcher.SocialClass <- ftable(xtabs(~SocialClass + Switcher, data=dsHistPres))
+ftab.Switcher.JobWorry <- ftable(xtabs(~JobWorry + Switcher, data=dsHistPres))
+ftab.Switcher.Year <- ftable(xtabs(~Year + Switcher, data=dsHistPres))
+
+ftab.Switcher <- ftable(xtabs(~Switcher, data = dsHistPres))
+
+#Percentages
+ptab.Switcher.Gender <- percentages(Switcher ~ Gender, data=dsHistPres)
+ptab.Switcher.Race4 <- percentages(Switcher~Race4, data=dsHistPres)
+ptab.Switcher.Education <- percentages(Switcher~Education, data=dsHistPres)
+ptab.Switcher.IncomeGroup <- percentages(Switcher~IncomeGroup, data=dsHistPres)
+ptab.Switcher.Occupation <- percentages(Switcher~Occupation, data=dsHistPres)
+ptab.Switcher.Religion <- percentages(Switcher~Religion,data=dsHistPres)
+ptab.Switcher.SocialClass <- percentages(Switcher~SocialClass, data=dsHistPres)
+ptab.Switcher.JobWorry <- percentages(Switcher~JobWorry, data=dsHistPres)
+ptab.Switcher.Year <- percentages(Switcher~Year, data=dsHistPres)
+ptab.Switcher <- percentages(~Switcher, data = dsHistPres)
+
+fptab.Gender.Switcher <- ftable(ptab.Switcher.Gender, col.vars=1)
+fptab.Race4.Switcher <- ftable(ptab.Switcher.Race4, col.vars=1)
+fptab.Education.Switcher <- ftable(ptab.Switcher.Education, col.vars=1)
+fptab.IncomeGroup.Switcher <- ftable(ptab.Switcher.IncomeGroup, col.vars=1)
+fptab.Occupation.Switcher <- ftable(ptab.Switcher.Occupation, col.vars=1)
+fptab.Religion.Switcher <- ftable(ptab.Switcher.Religion, col.vars=1)
+fptab.SocialClass.Switcher <- ftable(ptab.Switcher.SocialClass, col.vars=1)
+fptab.JobWorry.Switcher <- ftable(ptab.Switcher.JobWorry, col.vars=1)
+fptab.Year.Switcher <- ftable(ptab.Switcher.Year, col.vars=1)
+
+# show_html(
+#   rbind(
+#     fptab.Gender.Switcher,
+#     fptab.Race4.Switcher,
+#     fptab.Education.Switcher,
+#     fptab.IncomeGroup.Switcher,
+#     fptab.Occupation.Switcher,
+#     fptab.Religion.Switcher,
+#     fptab.SocialClass.Switcher,
+#     fptab.Year.Switcher
+#   ),
+#   digits=1
+# )
+
+percSwitcher <-   rbind(
+    fptab.Gender.Switcher,
+    fptab.Race4.Switcher,
+    fptab.Education.Switcher,
+    fptab.IncomeGroup.Switcher,
+    fptab.Occupation.Switcher,
+    fptab.Religion.Switcher,
+    fptab.SocialClass.Switcher,
+    fptab.JobWorry.Switcher,
+    fptab.Year.Switcher
+  )
+
+freqSwitcher <-   rbind(
+    ftab.Switcher.Gender,
+    ftab.Switcher.Race4,
+    ftab.Switcher.Education,
+    ftab.Switcher.IncomeGroup,
+    ftab.Switcher.Occupation,
+    ftab.Switcher.Religion,
+    ftab.Switcher.SocialClass,
+    ftab.Switcher.JobWorry,
+    ftab.Switcher.Year
+  )
+show_html(
+cbind(percSwitcher, freqSwitcher)
+)
+# colnames(dsHistPres)
+# show_html(
+#   rbind(
+#     ftab.Switcher.Gender,
+#     ftab.Switcher.Education,
+#     ftab.Switcher.Race4,
+#     ftab.Switcher.IncomeGroup,
+#     ftab.Switcher.Occupation,
+#     ftab.Switcher.Religion,
+#     ftab.Switcher.SocialClass,
+#     ftab.Switcher.Year
+#   )
+# )
+```
+
+#Partisanship
+```{r}
+#Frequencies
+ftab.Switcher.PartyIdent7 <- ftable(xtabs(~PartyIdent7+Switcher, data=dsHistPres))
+ftab.Switcher.PoliticalInterest <- ftable(xtabs(~PoliticalInterest + Switcher, data=dsHistPres))
+ftab.Switcher.CarePartyPres <- ftable(xtabs(~CarePartyPres + Switcher, data=dsHistPres))
+ftab.Switcher.InterestPublicAffairs <- ftable(xtabs(~InterestPublicAffairs + Switcher, data=dsHistPres))
+
+#Percentages
+ptab.Switcher.PartyIdent7 <- percentages(Switcher ~ PartyIdent7, data=dsHistPres)
+ptab.Switcher.PoliticalInterest <- percentages(Switcher~PoliticalInterest, data=dsHistPres)
+ptab.Switcher.CarePartyPres <- percentages(Switcher~CarePartyPres, data=dsHistPres)
+ptab.Switcher.InterestPublicAffairs <- percentages(Switcher~InterestPublicAffairs, data=dsHistPres)
+
+fptab.PartyIdent7.Switcher <- ftable(ptab.Switcher.PartyIdent7, col.vars=1)
+fptab.PoliticalInterest.Switcher <- ftable(ptab.Switcher.PoliticalInterest, col.vars=1)
+fptab.CarePartyPres.Switcher <- ftable(ptab.Switcher.CarePartyPres, col.vars=1)
+fptab.InterestPublicAffairs.Switcher <- ftable(ptab.Switcher.InterestPublicAffairs, col.vars=1)
+
+# show_html(
+#   rbind(
+#     fptab.PartyIdent7.Switcher,
+#     fptab.PoliticalInterest.Switcher,
+#     fptab.CarePartyPres.Switcher,
+#     fptab.InterestPublicAffairs.Switcher,
+#   ),
+#   digits=1
+# )
+
+percSwitcherPol <-   rbind(
+    fptab.PartyIdent7.Switcher,
+    fptab.PoliticalInterest.Switcher,
+    fptab.CarePartyPres.Switcher,
+    fptab.InterestPublicAffairs.Switcher
+  )
+
+freqSwitcherPol <-   rbind(
+    ftab.Switcher.PartyIdent7,
+    ftab.Switcher.PoliticalInterest,
+    ftab.Switcher.CarePartyPres,
+    ftab.Switcher.InterestPublicAffairs
+  )
+show_html(
+cbind(percSwitcherPol, freqSwitcherPol)
+)
+```
+#Candidate Evaluations
+```{r}
+#Frequencies
+ftab.Switcher.DemCandAngry <- ftable(xtabs(~DemCandAngry+Switcher, data=dsHistPres))
+ftab.Switcher.DemCandAfraid <- ftable(xtabs(~DemCandAfraid + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandHopeful <- ftable(xtabs(~DemCandHopeful + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandProud <- ftable(xtabs(~DemCandProud + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandKnowledge <- ftable(xtabs(~DemCandKnowledge+Switcher, data=dsHistPres))
+ftab.Switcher.DemCandLeader <- ftable(xtabs(~DemCandLeader + Switcher, data=dsHistPres))
+ftab.Switcher.DemCandCares <- ftable(xtabs(~DemCandCares + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandAngry <- ftable(xtabs(~RepCandAngry + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandAfraid <- ftable(xtabs(~RepCandAfraid + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandHopeful <- ftable(xtabs(~RepCandHopeful + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandProud <- ftable(xtabs(~RepCandProud + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandKnowledge <- ftable(xtabs(~RepCandKnowledge + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandLeader <- ftable(xtabs(~RepCandLeader + Switcher, data=dsHistPres))
+ftab.Switcher.RepCandCares <- ftable(xtabs(~RepCandCares + Switcher, data=dsHistPres))
+
+#Percentages
+ptab.Switcher.DemCandAngry <- percentages(Switcher ~ DemCandAngry, data=dsHistPres)
+ptab.Switcher.DemCandAfraid <- percentages(Switcher~DemCandAfraid, data=dsHistPres)
+ptab.Switcher.DemCandHopeful <- percentages(Switcher~DemCandHopeful, data=dsHistPres)
+ptab.Switcher.DemCandProud <- percentages(Switcher~DemCandProud, data=dsHistPres)
+ptab.Switcher.DemCandKnowledge <- percentages(Switcher ~ DemCandKnowledge, data=dsHistPres)
+ptab.Switcher.DemCandLeader <- percentages(Switcher~DemCandLeader, data=dsHistPres)
+ptab.Switcher.DemCandCares <- percentages(Switcher~DemCandCares, data=dsHistPres)
+ptab.Switcher.RepCandAngry <- percentages(Switcher~RepCandAngry, data=dsHistPres)
+ptab.Switcher.RepCandAfraid <- percentages(Switcher~RepCandAfraid, data=dsHistPres)
+ptab.Switcher.RepCandHopeful <- percentages(Switcher~RepCandHopeful,data=dsHistPres)
+ptab.Switcher.RepCandProud <- percentages(Switcher~RepCandProud, data=dsHistPres)
+ptab.Switcher.RepCandKnowledge <- percentages(Switcher~RepCandKnowledge, data=dsHistPres)
+ptab.Switcher.RepCandLeader <- percentages(Switcher~RepCandLeader, data=dsHistPres)
+ptab.Switcher.RepCandCares <- percentages(Switcher~RepCandCares, data=dsHistPres)
+ptab.Switcher <- percentages(~Switcher, data = dsHistPres)
+
+fptab.DemCandAngry.Switcher <- ftable(ptab.Switcher.DemCandAngry, col.vars=1)
+fptab.DemCandAfraid.Switcher <- ftable(ptab.Switcher.DemCandAfraid, col.vars=1)
+fptab.DemCandHopeful.Switcher <- ftable(ptab.Switcher.DemCandHopeful, col.vars=1)
+fptab.DemCandProud.Switcher <- ftable(ptab.Switcher.DemCandProud, col.vars=1)
+fptab.DemCandKnowledge.Switcher <- ftable(ptab.Switcher.DemCandKnowledge, col.vars=1)
+fptab.DemCandLeader.Switcher <- ftable(ptab.Switcher.DemCandLeader, col.vars=1)
+fptab.DemCandCares.Switcher <- ftable(ptab.Switcher.DemCandCares, col.vars=1)
+fptab.RepCandAngry.Switcher <- ftable(ptab.Switcher.RepCandAngry, col.vars=1)
+fptab.RepCandAfraid.Switcher <- ftable(ptab.Switcher.RepCandAfraid, col.vars=1)
+fptab.RepCandHopeful.Switcher <- ftable(ptab.Switcher.RepCandHopeful, col.vars=1)
+fptab.RepCandProud.Switcher <- ftable(ptab.Switcher.RepCandProud, col.vars=1)
+fptab.RepCandKnowledge.Switcher <- ftable(ptab.Switcher.RepCandKnowledge, col.vars=1)
+fptab.RepCandLeader.Switcher <- ftable(ptab.Switcher.RepCandLeader, col.vars=1)
+fptab.RepCandCares.Switcher <- ftable(ptab.Switcher.RepCandCares, col.vars=1)
+# show_html(
+#   rbind(
+#     fptab.DemCandAngry.Switcher,
+#     fptab.DemCandAfraid.Switcher,
+#     fptab.DemCandHopeful.Switcher,
+#     fptab.DemCandProud.Switcher,
+#   ),
+#   digits=1
+# )
+
+percSwitcherCand <-   rbind(
+    fptab.DemCandAngry.Switcher,
+    fptab.DemCandAfraid.Switcher,
+    fptab.DemCandHopeful.Switcher,
+    fptab.DemCandProud.Switcher,
+    fptab.DemCandKnowledge.Switcher,
+    fptab.DemCandLeader.Switcher,
+    fptab.DemCandCares.Switcher,
+    fptab.RepCandAngry.Switcher,
+    fptab.RepCandAfraid.Switcher,
+    fptab.RepCandHopeful.Switcher,
+    fptab.RepCandProud.Switcher,
+    fptab.RepCandKnowledge.Switcher,
+    fptab.RepCandLeader.Switcher,
+    fptab.RepCandCares.Switcher
+  )
+
+freqSwitcherCand <-   rbind(
+    ftab.Switcher.DemCandAngry,
+    ftab.Switcher.DemCandAfraid,
+    ftab.Switcher.DemCandHopeful,
+    ftab.Switcher.DemCandProud,
+    ftab.Switcher.DemCandKnowledge,
+    ftab.Switcher.DemCandLeader,
+    ftab.Switcher.DemCandCares,
+    ftab.Switcher.RepCandAngry,
+    ftab.Switcher.RepCandAfraid,
+    ftab.Switcher.RepCandHopeful,
+    ftab.Switcher.RepCandProud,
+    ftab.Switcher.RepCandKnowledge,
+    ftab.Switcher.RepCandLeader,
+    ftab.Switcher.RepCandCares
+  )
+show_html(
+cbind(percSwitcherCand, freqSwitcherCand)
+)
+```
